@@ -4,37 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://script.google.com https://script.googleusercontent.com; object-src 'none';">
-    <title>RITUAL ENGINE | V10.2 SECURE NODE</title>
+    <title>RITUAL ENGINE | V10.4 SECURE NODE</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
-
-        /* THE PHOENIX OVERLAY */
-        #phoenix-layer {
-            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.95); z-index: 1000; flex-direction:column; align-items:center; justify-content:center;
-        }
-        .phoenix-aura {
-            width: 300px; height: 300px; border-radius: 50%;
-            border: 2px solid var(--warn); box-shadow: 0 0 50px var(--warn);
-            animation: pulse 1s infinite alternate;
-            /* Update this URL once you have your final Mecha Phoenix asset */
-            background: url('https://placekitten.com/g/300/300') no-repeat center; 
-            background-size: contain;
-        }
+        #phoenix-layer { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction:column; align-items:center; justify-content:center; }
+        .phoenix-aura { width: 300px; height: 300px; border-radius: 50%; border: 2px solid var(--warn); box-shadow: 0 0 50px var(--warn); animation: pulse 1s infinite alternate; background: url('https://placehold.co/300x300/orange/white?text=PHOENIX') no-repeat center; background-size: contain; }
         @keyframes pulse { from { opacity: 0.4; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
-
-        /* DUAL PANE LAYOUT */
         .app-shell { display:flex; flex-direction:column; height:100vh; padding:20px; box-sizing:border-box; }
         .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; }
         .grid { display:flex; flex:1; gap:20px; overflow:hidden; }
         .pane { flex:1; background:var(--panel); border:1px solid #222; display:flex; flex-direction:column; padding:15px; position:relative; }
         .display { flex:1; background:#000; overflow-y:auto; padding:10px; font-size:12px; color:#fff; border:1px solid #111; }
-        
-        /* INPUTS & BUTTONS */
         .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:12px; margin:10px 0; outline:none; box-sizing: border-box; }
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing: 2px; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:disabled { opacity: 0.5; }
+        a { color: #666; font-size: 10px; text-decoration: none; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -48,119 +33,114 @@
 <div class="app-shell" id="main-ui">
     <div id="login-view" style="max-width:400px; margin:auto; text-align:center;">
         <h2 style="letter-spacing: 5px;">RITUAL ENGINE</h2>
-        <p style="font-size: 10px; color: #555;">DAVIS SYSTEMS PC | SECURE SaaS NODE</p>
         <input type="text" id="auth-key" class="ritual-input" placeholder="ENTER ACCESS KEY">
         <button class="btn" id="login-btn">INITIALIZE</button>
+        <p style="margin-top:15px;"><a id="recover-link">LOST ACCESS KEY?</a></p>
     </div>
 
     <div id="setup-view" style="display:none; max-width:400px; margin:auto;">
         <h2>IDENTITY SETUP</h2>
         <input type="text" id="s-name" class="ritual-input" placeholder="ALLIANCE NAME">
-        <input type="text" id="s-game" class="ritual-input" placeholder="ACTIVE GAME (e.g. Last War)">
+        <input type="text" id="s-game" class="ritual-input" placeholder="ACTIVE GAME">
         <input type="text" id="s-tag" class="ritual-input" placeholder="TAG (TCA)">
         <input type="text" id="s-logo" class="ritual-input" placeholder="LOGO URL">
-        <button class="btn" id="deploy-btn">LOCK PERMANENTLY</button>
+        <button class="btn" id="deploy-btn">LOCK BRANDING</button>
+    </div>
+
+    <div id="account-view" style="display:none; max-width:400px; margin:auto; text-align:center;">
+        <h2>CLAIM YOUR NODE</h2>
+        <input type="text" id="reg-user" class="ritual-input" placeholder="CREATE USERNAME">
+        <input type="password" id="reg-pass" class="ritual-input" placeholder="CREATE PASSWORD">
+        <button class="btn" id="claim-btn">ACTIVATE ACCOUNT</button>
     </div>
 
     <div id="arena-view" style="display:none; flex-direction:column; height:100%;">
         <div class="header">
-            <div><h2 id="disp-name" style="margin:0;">---</h2><small id="disp-game" style="color:#666;"></small></div>
-            <div id="disp-tag" style="color:#4caf50;">[SECURE NODE ACTIVE]</div>
+            <div><h2 id="disp-name" style="margin:0;">---</h2><small id="disp-game"></small></div>
+            <div style="color:#4caf50;">[SECURE NODE ACTIVE]</div>
         </div>
         <div class="grid">
             <div class="pane" id="left-pane">
                 <small>🏆 ALLIANCE RECORDS</small>
-                <div id="hof-box" class="display">Syncing Gist Data...</div>
-                </div>
+                <div id="hof-box" class="display">Syncing Gist...</div>
+            </div>
             <div class="pane">
                 <small>🔥 ARENA CHAT</small>
-                <div id="chat-box" class="display">Connecting to Node...</div>
-                <input type="text" id="chat-in" class="ritual-input" placeholder="Enter Transmission...">
-                <button class="btn" id="chat-btn">EXECUTE</button>
+                <div id="chat-box" class="display">Connected.</div>
+                <input type="text" class="ritual-input" placeholder="Transmission...">
+                <button class="btn">EXECUTE</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURATION ---
     const SCRIPT = "https://script.google.com/macros/s/AKfycbwderWvL-zU36LWZ2SGZ6BzoNrX87CaPTTs9aDQhP_b_ddekarp9DV4bTAZN7QuGI5B/exec"; 
     let USER = null;
 
-    // --- SECURITY-HARDENED EVENT LISTENERS ---
     document.addEventListener('DOMContentLoaded', () => {
-        const loginBtn = document.getElementById('login-btn');
-        if (loginBtn) loginBtn.addEventListener('click', authenticate);
-
-        const deployBtn = document.getElementById('deploy-btn');
-        if (deployBtn) deployBtn.addEventListener('click', deployBranding);
+        document.getElementById('login-btn').addEventListener('click', authenticate);
+        document.getElementById('deploy-btn').addEventListener('click', deployBranding);
+        document.getElementById('claim-btn').addEventListener('click', activateAccount);
+        document.getElementById('recover-link').addEventListener('click', recoverKey);
     });
 
     function authenticate() {
-        const keyInput = document.getElementById('auth-key');
+        const key = document.getElementById('auth-key').value.trim();
         const btn = document.getElementById('login-btn');
-        const key = keyInput.value.trim();
-
-        if (!key) { alert("ACCESS KEY REQUIRED"); return; }
-
-        btn.innerText = "VERIFYING NODE...";
-        btn.disabled = true;
-
+        if(!key) return;
+        btn.innerText = "VERIFYING...";
         fetch(`${SCRIPT}?key=${key}`)
             .then(res => res.json())
             .then(data => {
-                if (data.status === "UNAUTHORIZED") throw new Error("INVALID_KEY");
+                if(data.status === "UNAUTHORIZED") throw new Error();
                 USER = data;
                 document.getElementById('login-view').style.display = 'none';
-                if (data.status === "AUTHORIZED_FIRST_TIME") {
-                    document.getElementById('setup-view').style.display = 'block';
-                } else {
-                    launchArena();
-                }
-            })
-            .catch(err => {
-                alert(err.message === "INVALID_KEY" ? "ACCESS DENIED" : "COMMUNICATIONS FAILURE");
-                btn.innerText = "INITIALIZE";
-                btn.disabled = false;
-            });
+                if(data.status === "STEP_BRANDING") document.getElementById('setup-view').style.display = 'block';
+                else if(data.status === "STEP_ACCOUNT") document.getElementById('account-view').style.display = 'block';
+                else launchArena();
+            }).catch(() => { alert("ACCESS DENIED"); btn.innerText = "INITIALIZE"; });
     }
 
     function deployBranding() {
-        const btn = document.getElementById('deploy-btn');
         const key = document.getElementById('auth-key').value.trim();
         const name = encodeURIComponent(document.getElementById('s-name').value);
         const game = encodeURIComponent(document.getElementById('s-game').value);
         const tag = encodeURIComponent(document.getElementById('s-tag').value);
         const logo = encodeURIComponent(document.getElementById('s-logo').value);
-
-        btn.innerText = "LOCKING IDENTITY...";
-        btn.disabled = true;
-
         fetch(`${SCRIPT}?key=${key}&name=${name}&game=${game}&tag=${tag}&logo=${logo}`)
-            .then(() => {
-                alert("BRANDING DEPLOYED");
-                location.reload();
-            })
-            .catch(() => {
-                alert("DEPLOYMENT FAILED");
-                btn.innerText = "LOCK PERMANENTLY";
-                btn.disabled = false;
-            });
+            .then(() => { alert("BRANDING LOCKED"); location.reload(); });
+    }
+
+    function activateAccount() {
+        const key = document.getElementById('auth-key').value.trim();
+        const user = document.getElementById('reg-user').value;
+        const pass = document.getElementById('reg-pass').value;
+        fetch(`${SCRIPT}?key=${key}&username=${user}&password=${pass}`)
+            .then(() => { alert("ACCOUNT ACTIVATED"); location.reload(); });
+    }
+
+    function recoverKey() {
+        const email = prompt("ENTER REGISTERED EMAIL:");
+        if(email) fetch(`${SCRIPT}?recover=${email}`).then(() => alert("CHECK YOUR INBOX"));
     }
 
     function launchArena() {
-        document.getElementById('setup-view').style.display = 'none';
+        document.getElementById('login-view').style.display = 'none';
         document.getElementById('arena-view').style.display = 'flex';
-        
-        // Populate Branding
-        document.getElementById('disp-name').innerText = USER.name || "THE COLONY";
-        document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game || 'INITIALIZING'}`;
-
-        // --- OFFICER COMMAND CENTER UNLOCK ---
-        if (USER.role === "ACTIVE_OWNER" || USER.role === "OFFICER") {
-            const adminPanel = document.createElement('div');
-            adminPanel.style.marginTop = "20px";
-            adminPanel.innerHTML = `
-                <hr style="border: 0.5px dashed var(--gold); opacity: 0.3; margin: 15px 0;">
-                <p style="font-size: 10px; margin-bottom: 10px; color: var(--gold);">OFFICER COMMAND CENTER</p>
-                <button class="btn" id="ledger-
+        document.getElementById('disp-name').innerText = USER.name;
+        document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game}`;
+        if(USER.role === "ACTIVE_OWNER" || USER.role === "OFFICER") {
+            const admin = document.createElement('div');
+            admin.innerHTML = `<hr style="opacity:0.2;margin:15px 0;"><button class="btn" style="margin-bottom:5px;background:#222;color:var(--gold);" onclick="window.open('${USER.sheetUrl}')">OPEN LEDGER</button><button class="btn" style="background:var(--warn);color:#000;" id="rit-btn">INITIATE RITUAL</button>`;
+            document.getElementById('left-pane').appendChild(admin);
+            document.getElementById('rit-btn').addEventListener('click', () => {
+                document.getElementById('phoenix-layer').style.display = 'flex';
+                let c = 10;
+                let t = setInterval(() => { c--; document.getElementById('countdown').innerText = c; if(c<=0){ clearInterval(t); document.getElementById('phoenix-layer').style.display='none'; alert("RITUAL COMPLETE"); } }, 1000);
+            });
+        }
+    }
+</script>
+</body>
+</html>
