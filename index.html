@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://script.google.com https://script.googleusercontent.com; object-src 'none';">
-    <title>RITUAL ENGINE | V10.0 SECURE NODE</title>
+    <title>RITUAL ENGINE | V10.2 SECURE NODE</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
@@ -18,7 +18,8 @@
             width: 300px; height: 300px; border-radius: 50%;
             border: 2px solid var(--warn); box-shadow: 0 0 50px var(--warn);
             animation: pulse 1s infinite alternate;
-            background: url('https://your-image-link.com/mecha-phoenix.png') no-repeat center;
+            /* Update this URL once you have your final Mecha Phoenix asset */
+            background: url('https://placekitten.com/g/300/300') no-repeat center; 
             background-size: contain;
         }
         @keyframes pulse { from { opacity: 0.4; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
@@ -67,10 +68,10 @@
             <div id="disp-tag" style="color:#4caf50;">[SECURE NODE ACTIVE]</div>
         </div>
         <div class="grid">
-            <div class="pane">
+            <div class="pane" id="left-pane">
                 <small>🏆 ALLIANCE RECORDS</small>
                 <div id="hof-box" class="display">Syncing Gist Data...</div>
-            </div>
+                </div>
             <div class="pane">
                 <small>🔥 ARENA CHAT</small>
                 <div id="chat-box" class="display">Connecting to Node...</div>
@@ -88,11 +89,9 @@
 
     // --- SECURITY-HARDENED EVENT LISTENERS ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Login Button Listener
         const loginBtn = document.getElementById('login-btn');
         if (loginBtn) loginBtn.addEventListener('click', authenticate);
 
-        // Branding Button Listener
         const deployBtn = document.getElementById('deploy-btn');
         if (deployBtn) deployBtn.addEventListener('click', deployBranding);
     });
@@ -120,7 +119,7 @@
                 }
             })
             .catch(err => {
-                alert(err.message === "INVALID_KEY" ? "ACCESS DENIED": "COMMUNICATIONS FAILURE");
+                alert(err.message === "INVALID_KEY" ? "ACCESS DENIED" : "COMMUNICATIONS FAILURE");
                 btn.innerText = "INITIALIZE";
                 btn.disabled = false;
             });
@@ -152,10 +151,16 @@
     function launchArena() {
         document.getElementById('setup-view').style.display = 'none';
         document.getElementById('arena-view').style.display = 'flex';
-        document.getElementById('disp-name').innerText = USER.name;
-        document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game}`;
-    }
-</script>
+        
+        // Populate Branding
+        document.getElementById('disp-name').innerText = USER.name || "THE COLONY";
+        document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game || 'INITIALIZING'}`;
 
-</body>
-</html>
+        // --- OFFICER COMMAND CENTER UNLOCK ---
+        if (USER.role === "ACTIVE_OWNER" || USER.role === "OFFICER") {
+            const adminPanel = document.createElement('div');
+            adminPanel.style.marginTop = "20px";
+            adminPanel.innerHTML = `
+                <hr style="border: 0.5px dashed var(--gold); opacity: 0.3; margin: 15px 0;">
+                <p style="font-size: 10px; margin-bottom: 10px; color: var(--gold);">OFFICER COMMAND CENTER</p>
+                <button class="btn" id="ledger-
