@@ -4,37 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://script.google.com https://script.googleusercontent.com; object-src 'none';">
-    <title>RITUAL ENGINE | V10.5 SECURE NODE</title>
+    <title>RITUAL ENGINE | V11.1 COMMAND NODE</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
-
-        /* THE PHOENIX OVERLAY - VISUAL RITUAL ENGINE */
-        #phoenix-layer {
-            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.95); z-index: 1000; flex-direction:column; align-items:center; justify-content:center;
-        }
-        .phoenix-aura {
-            width: 300px; height: 300px; border-radius: 50%;
-            border: 2px solid var(--warn); box-shadow: 0 0 50px var(--warn);
-            animation: pulse 1s infinite alternate;
-            /* COMPILED MECHA PHOENIX VISUAL */
-            background: url('https://files.oaiusercontent.com/file-m0PIn3C9mS6e8o4T2zH7Z0?se=2026-03-23T21%3A55%3A00Z&sp=r&sv=2024-08-04&sr=b&rscc=max-age%3D604800%2C%20immutable%2C%20private&rscd=attachment%3B%20filename%3Dmecha_phoenix.png&sig=S9R/uL/7tZ7bU5j4W4N5M5k7J8L9M0N1P2Q3R4S5T6U%3D') no-repeat center;
-            background-size: contain;
-        }
+        
+        /* PHOENIX RITUAL OVERLAY */
+        #phoenix-layer { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction:column; align-items:center; justify-content:center; }
+        .phoenix-aura { width: 300px; height: 300px; border-radius: 50%; border: 2px solid var(--warn); box-shadow: 0 0 50px var(--warn); animation: pulse 1s infinite alternate; background: url('https://files.oaiusercontent.com/file-m0PIn3C9mS6e8o4T2zH7Z0?se=2026-03-23T21%3A55%3A00Z&sp=r&sv=2024-08-04&sr=b&rscc=max-age%3D604800%2C%20immutable%2C%20private&rscd=attachment%3B%20filename%3Dmecha_phoenix.png&sig=S9R/uL/7tZ7bU5j4W4N5M5k7J8L9M0N1P2Q3R4S5T6U%3D') no-repeat center; background-size: contain; }
         @keyframes pulse { from { opacity: 0.4; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
 
-        /* DUAL PANE LAYOUT */
         .app-shell { display:flex; flex-direction:column; height:100vh; padding:20px; box-sizing:border-box; }
-        .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; }
+        .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; align-items: center; }
+        .alliance-logo { height: 45px; width: 45px; border: 1px solid var(--gold); margin-right: 15px; background-size: cover; background-position: center; background-color: #111; }
         .grid { display:flex; flex:1; gap:20px; overflow:hidden; }
-        .pane { flex:1; background:var(--panel); border:1px solid #222; display:flex; flex-direction:column; padding:15px; position:relative; }
-        .display { flex:1; background:#000; overflow-y:auto; padding:10px; font-size:12px; color:#fff; border:1px solid #111; }
-        
-        /* INPUTS & BUTTONS */
+        .pane { flex:1; background:var(--panel); border:1px solid #222; display:flex; flex-direction:column; padding:15px; position:relative; overflow-y: auto; }
+        .display { flex:1; background:#000; overflow-y:auto; padding:10px; font-size:12px; color:#fff; border:1px solid #111; margin-bottom: 10px; }
         .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:12px; margin:10px 0; outline:none; box-sizing: border-box; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing: 2px; }
-        .btn:disabled { opacity: 0.5; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+        .btn:hover { background: #fff; }
+        .btn-sub { background: #222; color: var(--gold); font-size: 10px; padding: 10px; }
         a { color: #666; font-size: 10px; text-decoration: none; cursor: pointer; }
     </style>
 </head>
@@ -59,9 +48,9 @@
         <h2>IDENTITY SETUP</h2>
         <input type="text" id="s-name" class="ritual-input" placeholder="ALLIANCE NAME">
         <input type="text" id="s-game" class="ritual-input" placeholder="ACTIVE GAME">
-        <input type="text" id="s-tag" class="ritual-input" placeholder="TAG (TCA)">
-        <input type="text" id="s-logo" class="ritual-input" placeholder="LOGO URL">
-        <button class="btn" id="deploy-btn">LOCK BRANDING</button>
+        <input type="text" id="s-tag" class="ritual-input" placeholder="TAG (e.g. TCA1)">
+        <input type="text" id="s-logo" class="ritual-input" placeholder="LOGO URL (HTTPS)">
+        <button class="btn" id="deploy-btn">LOCK IDENTITY</button>
     </div>
 
     <div id="account-view" style="display:none; max-width:400px; margin:auto; text-align:center;">
@@ -73,8 +62,11 @@
 
     <div id="arena-view" style="display:none; flex-direction:column; height:100%;">
         <div class="header">
-            <div><h2 id="disp-name" style="margin:0;">---</h2><small id="disp-game"></small></div>
-            <div style="color:#4caf50;">[SECURE NODE ACTIVE]</div>
+            <div style="display:flex; align-items:center;">
+                <div id="alliance-img" class="alliance-logo"></div>
+                <div><h2 id="disp-name" style="margin:0;">---</h2><small id="disp-game" style="color:#666;"></small></div>
+            </div>
+            <div id="role-tag" style="color:var(--gold); font-size: 10px; border: 1px solid var(--gold); padding: 2px 8px;">MEMBER</div>
         </div>
         <div class="grid">
             <div class="pane" id="left-pane">
@@ -83,7 +75,7 @@
             </div>
             <div class="pane">
                 <small>🔥 ARENA CHAT</small>
-                <div id="chat-box" class="display">Connected to Node...</div>
+                <div id="chat-box" class="display">Connected.</div>
                 <input type="text" class="ritual-input" placeholder="Enter Transmission...">
                 <button class="btn">EXECUTE</button>
             </div>
@@ -92,11 +84,9 @@
 </div>
 
 <script>
-    // --- CONFIGURATION ---
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbws_Ub7so3Y-DYTLifAsKm7BZsrv6L0jHEYrvqtFQshchju28Jf0c5OONIiUuua2nuO/exec"; 
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbwi3oI4QP3Xk8zJ1Cg7gkYTXOd-hPI9oBYOp2Q1DRL1EL2cReXGAPQ3Y1HDilvS50Lk/exec"; 
     let USER = null;
 
-    // --- SECURITY-HARDENED EVENT LISTENERS ---
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('login-btn').addEventListener('click', authenticate);
         document.getElementById('deploy-btn').addEventListener('click', deployBranding);
@@ -112,7 +102,6 @@
         fetch(`${SCRIPT}?key=${key}`)
             .then(res => res.json())
             .then(data => {
-                if(data.status === "UNAUTHORIZED") throw new Error();
                 USER = data;
                 document.getElementById('login-view').style.display = 'none';
                 if(data.status === "STEP_BRANDING") document.getElementById('setup-view').style.display = 'block';
@@ -149,11 +138,42 @@
         document.getElementById('arena-view').style.display = 'flex';
         document.getElementById('disp-name').innerText = USER.name;
         document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game}`;
-        if(USER.role === "ACTIVE_OWNER" || USER.role === "OFFICER") {
-            const admin = document.createElement('div');
-            admin.innerHTML = `<hr style="opacity:0.2;margin:15px 0;"><button class="btn" style="margin-bottom:5px;background:#222;color:var(--gold);" onclick="window.open('${USER.sheetUrl}')">OPEN LEDGER</button><button class="btn" style="background:var(--warn);color:#000;" id="rit-btn">INITIATE RITUAL</button>`;
-            document.getElementById('left-pane').appendChild(admin);
+        document.getElementById('role-tag').innerText = USER.role;
+        
+        if (USER.logo) {
+            document.getElementById('alliance-img').style.backgroundImage = `url('${USER.logo}')`;
+        }
+
+        const leftPane = document.getElementById('left-pane');
+
+        // COMMAND CENTER TOOLS (OFFICER & OWNER)
+        if(USER.role === "OWNER" || USER.role === "OFFICER") {
+            const cmdHtml = `
+                <hr style="opacity:0.2;margin:15px 0;">
+                <p style="font-size:10px; color:var(--gold); margin-bottom:10px;">COMMAND CENTER [${USER.role}]</p>
+                <button class="btn btn-sub" onclick="window.open('${USER.sheetUrl}')">OPEN MASTER LEDGER</button>
+                <button class="btn" style="background:var(--warn);color:#000;" id="rit-btn">INITIATE RITUAL</button>
+                <button class="btn btn-sub" id="upload-btn">UPLOAD ROSTER (.CSV)</button>
+                <button class="btn btn-sub" id="invite-btn">COPY INVITE LINK</button>
+            `;
+            leftPane.insertAdjacentHTML('beforeend', cmdHtml);
+
             document.getElementById('rit-btn').addEventListener('click', startRitualAnimation);
+            document.getElementById('invite-btn').addEventListener('click', () => {
+                const link = `${window.location.origin}${window.location.pathname}?invite=${USER.inviteCode}`;
+                navigator.clipboard.writeText(link).then(() => alert("INVITATION LINK COPIED"));
+            });
+            document.getElementById('upload-btn').addEventListener('click', () => alert("CSV PARSER READY: SELECT FILE"));
+        }
+
+        // OWNER ONLY TOOLS
+        if(USER.role === "OWNER") {
+            const ownerBtn = document.createElement('button');
+            ownerBtn.className = "btn";
+            ownerBtn.style.marginTop = "10px";
+            ownerBtn.innerText = "SYSTEM SETTINGS";
+            ownerBtn.onclick = () => alert("SETTINGS NODE ACTIVE");
+            leftPane.appendChild(ownerBtn);
         }
     }
 
@@ -166,7 +186,7 @@
             if(count <= 0) {
                 clearInterval(timer);
                 document.getElementById('phoenix-layer').style.display='none';
-                alert("RITUAL COMPLETE: CHECK LEDGER FOR WINNER");
+                alert("RITUAL COMPLETE");
                 document.getElementById('countdown').innerText = "10";
             }
         }, 1000);
