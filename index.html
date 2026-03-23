@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>RITUAL ENGINE | V9.8 TACTICAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://script.google.com https://script.googleusercontent.com; object-src 'none';">
+    <title>RITUAL ENGINE | V10.0 SECURE NODE</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
 
-        /* THE PHOENIX OVERLAY (Hidden by default) */
+        /* THE PHOENIX OVERLAY */
         #phoenix-layer {
             display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.9); z-index: 1000; flex-direction:column; align-items:center; justify-content:center;
+            background: rgba(0,0,0,0.95); z-index: 1000; flex-direction:column; align-items:center; justify-content:center;
         }
         .phoenix-aura {
             width: 300px; height: 300px; border-radius: 50%;
@@ -28,9 +30,10 @@
         .pane { flex:1; background:var(--panel); border:1px solid #222; display:flex; flex-direction:column; padding:15px; position:relative; }
         .display { flex:1; background:#000; overflow-y:auto; padding:10px; font-size:12px; color:#fff; border:1px solid #111; }
         
-        /* INPUTS */
-        .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:12px; margin:10px 0; outline:none; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; text-transform:uppercase; }
+        /* INPUTS & BUTTONS */
+        .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:12px; margin:10px 0; outline:none; box-sizing: border-box; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing: 2px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -39,14 +42,14 @@
     <div class="phoenix-aura"></div>
     <h1 style="color:var(--warn); letter-spacing:10px; margin-top:20px;">RITUAL INITIATED</h1>
     <div id="countdown" style="font-size:40px; font-weight:bold;">10</div>
-    <div id="winner-reveal" style="display:none; font-size:24px; margin-top:20px; color:#fff;">WINNER: [REDACTED]</div>
 </div>
 
 <div class="app-shell" id="main-ui">
     <div id="login-view" style="max-width:400px; margin:auto; text-align:center;">
-        <h2>ENTER ACCESS KEY</h2>
-        <input type="text" id="auth-key" class="ritual-input" placeholder="RITUAL-XXXX">
-        <button class="btn" onclick="authenticate()">CONNECT TO NODE</button>
+        <h2 style="letter-spacing: 5px;">RITUAL ENGINE</h2>
+        <p style="font-size: 10px; color: #555;">DAVIS SYSTEMS PC | SECURE SaaS NODE</p>
+        <input type="text" id="auth-key" class="ritual-input" placeholder="ENTER ACCESS KEY">
+        <button class="btn" id="login-btn">INITIALIZE</button>
     </div>
 
     <div id="setup-view" style="display:none; max-width:400px; margin:auto;">
@@ -55,69 +58,104 @@
         <input type="text" id="s-game" class="ritual-input" placeholder="ACTIVE GAME (e.g. Last War)">
         <input type="text" id="s-tag" class="ritual-input" placeholder="TAG (TCA)">
         <input type="text" id="s-logo" class="ritual-input" placeholder="LOGO URL">
-        <button class="btn" onclick="deployBranding()">LOCK PERMANENTLY</button>
+        <button class="btn" id="deploy-btn">LOCK PERMANENTLY</button>
     </div>
 
     <div id="arena-view" style="display:none; flex-direction:column; height:100%;">
         <div class="header">
             <div><h2 id="disp-name" style="margin:0;">---</h2><small id="disp-game" style="color:#666;"></small></div>
-            <div id="disp-tag" style="color:#4caf50;">[SECURE]</div>
+            <div id="disp-tag" style="color:#4caf50;">[SECURE NODE ACTIVE]</div>
         </div>
         <div class="grid">
             <div class="pane">
                 <small>🏆 ALLIANCE RECORDS</small>
-                <div id="hof-box" class="display"></div>
-                <div id="officer-ctrl" style="display:none; margin-top:10px;">
-                    <button class="btn" style="background:#ff4444;" onclick="startRitual()">INITIATE DRAWING</button>
-                </div>
+                <div id="hof-box" class="display">Syncing Gist Data...</div>
             </div>
             <div class="pane">
                 <small>🔥 ARENA CHAT</small>
-                <div id="chat-box" class="display"></div>
-                <input type="text" id="chat-in" class="ritual-input" placeholder="Message...">
-                <button class="btn" onclick="sendMsg()">TRANSMIT</button>
+                <div id="chat-box" class="display">Connecting to Node...</div>
+                <input type="text" id="chat-in" class="ritual-input" placeholder="Enter Transmission...">
+                <button class="btn" id="chat-btn">EXECUTE</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // --- CONFIGURATION ---
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbwHNGS5NF8NzIc3pRjfHPUrGaNguf_AtJWar4CjY0W_tpU9y6e8Rqb0UdBbm0Qhf6-v/exec"; 
     let USER = null;
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbwHNGS5NF8NzIc3pRjfHPUrGaNguf_AtJWar4CjY0W_tpU9y6e8Rqb0UdBbm0Qhf6-v/exec";
+
+    // --- SECURITY-HARDENED EVENT LISTENERS ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Login Button Listener
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) loginBtn.addEventListener('click', authenticate);
+
+        // Branding Button Listener
+        const deployBtn = document.getElementById('deploy-btn');
+        if (deployBtn) deployBtn.addEventListener('click', deployBranding);
+    });
 
     function authenticate() {
-        const key = document.getElementById('auth-key').value;
-        fetch(`${SCRIPT}?key=${key}`).then(r => r.json()).then(data => {
-            USER = data;
-            document.getElementById('login-view').style.display='none';
-            if(data.status === "AUTHORIZED_FIRST_TIME") document.getElementById('setup-view').style.display='block';
-            else launch();
-        });
+        const keyInput = document.getElementById('auth-key');
+        const btn = document.getElementById('login-btn');
+        const key = keyInput.value.trim();
+
+        if (!key) { alert("ACCESS KEY REQUIRED"); return; }
+
+        btn.innerText = "VERIFYING NODE...";
+        btn.disabled = true;
+
+        fetch(`${SCRIPT}?key=${key}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "UNAUTHORIZED") throw new Error("INVALID_KEY");
+                USER = data;
+                document.getElementById('login-view').style.display = 'none';
+                if (data.status === "AUTHORIZED_FIRST_TIME") {
+                    document.getElementById('setup-view').style.display = 'block';
+                } else {
+                    launchArena();
+                }
+            })
+            .catch(err => {
+                alert(err.message === "INVALID_KEY" ? "ACCESS DENIED" : "COMMUNICATIONS FAILURE");
+                btn.innerText = "INITIALIZE";
+                btn.disabled = false;
+            });
     }
 
-    function launch() {
-        document.getElementById('setup-view').style.display='none';
-        document.getElementById('arena-view').style.display='flex';
+    function deployBranding() {
+        const btn = document.getElementById('deploy-btn');
+        const key = document.getElementById('auth-key').value.trim();
+        const name = encodeURIComponent(document.getElementById('s-name').value);
+        const game = encodeURIComponent(document.getElementById('s-game').value);
+        const tag = encodeURIComponent(document.getElementById('s-tag').value);
+        const logo = encodeURIComponent(document.getElementById('s-logo').value);
+
+        btn.innerText = "LOCKING IDENTITY...";
+        btn.disabled = true;
+
+        fetch(`${SCRIPT}?key=${key}&name=${name}&game=${game}&tag=${tag}&logo=${logo}`)
+            .then(() => {
+                alert("BRANDING DEPLOYED");
+                location.reload();
+            })
+            .catch(() => {
+                alert("DEPLOYMENT FAILED");
+                btn.innerText = "LOCK PERMANENTLY";
+                btn.disabled = false;
+            });
+    }
+
+    function launchArena() {
+        document.getElementById('setup-view').style.display = 'none';
+        document.getElementById('arena-view').style.display = 'flex';
         document.getElementById('disp-name').innerText = USER.name;
         document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game}`;
-        if(USER.role === "OWNER" || USER.role === "OFFICER") document.getElementById('officer-ctrl').style.display='block';
-    }
-
-    function startRitual() {
-        // This would normally trigger a Webhook to notify all members
-        document.getElementById('phoenix-layer').style.display='flex';
-        let count = 10;
-        const timer = setInterval(() => {
-            count--;
-            document.getElementById('countdown').innerText = count;
-            if(count <= 0) {
-                clearInterval(timer);
-                document.getElementById('winner-reveal').style.display='block';
-                document.getElementById('winner-reveal').innerText = "WINNER: CASS_THE_COWBOY";
-                setTimeout(() => { document.getElementById('phoenix-layer').style.display='none'; }, 5000);
-            }
-        }, 1000);
     }
 </script>
+
 </body>
 </html>
