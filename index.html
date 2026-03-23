@@ -2,91 +2,122 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ritual Engine | Secure Terminal</title>
+    <title>RITUAL ENGINE | V9.8 TACTICAL</title>
     <style>
-        :root { --gold: #d4af37; --bg: #0d0d0d; --panel: #151515; }
+        :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
+        body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
+
+        /* THE PHOENIX OVERLAY (Hidden by default) */
+        #phoenix-layer {
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.9); z-index: 1000; flex-direction:column; align-items:center; justify-content:center;
+        }
+        .phoenix-aura {
+            width: 300px; height: 300px; border-radius: 50%;
+            border: 2px solid var(--warn); box-shadow: 0 0 50px var(--warn);
+            animation: pulse 1s infinite alternate;
+            background: url('https://your-image-link.com/mecha-phoenix.png') no-repeat center;
+            background-size: contain;
+        }
+        @keyframes pulse { from { opacity: 0.4; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
+
+        /* DUAL PANE LAYOUT */
+        .app-shell { display:flex; flex-direction:column; height:100vh; padding:20px; box-sizing:border-box; }
+        .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; }
+        .grid { display:flex; flex:1; gap:20px; overflow:hidden; }
+        .pane { flex:1; background:var(--panel); border:1px solid #222; display:flex; flex-direction:column; padding:15px; position:relative; }
+        .display { flex:1; background:#000; overflow-y:auto; padding:10px; font-size:12px; color:#fff; border:1px solid #111; }
         
-        body, html { 
-            margin: 0; padding: 0; background: var(--bg); 
-            color: var(--gold); font-family: 'Courier New', monospace;
-            height: 100vh; width: 100vw; overflow: hidden;
-        }
-
-        /* --- TACTICAL GRID LAYOUT --- */
-        .app-container {
-            display: flex; flex-direction: column;
-            height: 100vh; padding: 20px; box-sizing: border-box;
-        }
-
-        .top-bar {
-            flex: 0 0 auto; display: flex; justify-content: space-between;
-            align-items: center; border-bottom: 2px solid var(--gold);
-            padding-bottom: 15px; margin-bottom: 20px;
-        }
-
-        .arena-main {
-            flex: 1; display: flex; gap: 20px; overflow: hidden;
-        }
-
-        .pane {
-            flex: 1; display: flex; flex-direction: column;
-            background: var(--panel); border: 1px solid #333;
-            border-radius: 4px; padding: 20px; box-shadow: inset 0 0 20px #000;
-        }
-
-        .window-display {
-            flex: 1; background: #000; border: 1px solid #222;
-            margin-top: 10px; padding: 15px; overflow-y: auto;
-            font-size: 14px; color: #fff; line-height: 1.6;
-        }
-
-        /* Elements */
-        .ritual-input { 
-            width: 100%; background: #000; color: #fff; border: 1px solid var(--gold);
-            padding: 15px; margin-top: 15px; font-family: inherit; font-size: 16px;
-        }
-        .btn-execute {
-            width: 100%; background: var(--gold); color: #000; border: none;
-            padding: 18px; font-weight: bold; margin-top: 10px; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 2px;
-        }
-
-        /* Mobile Adaptability for the Popup */
-        @media (max-width: 800px) {
-            .arena-main { flex-direction: column; }
-        }
+        /* INPUTS */
+        .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:12px; margin:10px 0; outline:none; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; text-transform:uppercase; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <div class="top-bar">
-        <div>
-            <h1 style="margin:0; font-size: 22px; letter-spacing: 5px;">RITUAL ENGINE</h1>
-            <span style="font-size: 10px; color: #666;">SECURE SaaS PORTAL | DAVIS SYSTEMS PC</span>
-        </div>
-        <div id="status-node" style="color: #4caf50; font-size: 12px;">● NODE_ACTIVE</div>
+<div id="phoenix-layer">
+    <div class="phoenix-aura"></div>
+    <h1 style="color:var(--warn); letter-spacing:10px; margin-top:20px;">RITUAL INITIATED</h1>
+    <div id="countdown" style="font-size:40px; font-weight:bold;">10</div>
+    <div id="winner-reveal" style="display:none; font-size:24px; margin-top:20px; color:#fff;">WINNER: [REDACTED]</div>
+</div>
+
+<div class="app-shell" id="main-ui">
+    <div id="login-view" style="max-width:400px; margin:auto; text-align:center;">
+        <h2>ENTER ACCESS KEY</h2>
+        <input type="text" id="auth-key" class="ritual-input" placeholder="RITUAL-XXXX">
+        <button class="btn" onclick="authenticate()">CONNECT TO NODE</button>
     </div>
 
-    <div class="arena-main">
-        <div class="pane">
-            <label style="font-size: 12px; font-weight: bold;">🏆 ALLIANCE HALL OF FAME</label>
-            <div id="hof-display" class="window-display">
-                [03/23 15:15] HANDSHAKE VERIFIED...<br>
-                [03/23 15:16] GIST CLOUD SYNCED...<br>
-            </div>
-        </div>
+    <div id="setup-view" style="display:none; max-width:400px; margin:auto;">
+        <h2>IDENTITY SETUP</h2>
+        <input type="text" id="s-name" class="ritual-input" placeholder="ALLIANCE NAME">
+        <input type="text" id="s-game" class="ritual-input" placeholder="ACTIVE GAME (e.g. Last War)">
+        <input type="text" id="s-tag" class="ritual-input" placeholder="TAG (TCA)">
+        <input type="text" id="s-logo" class="ritual-input" placeholder="LOGO URL">
+        <button class="btn" onclick="deployBranding()">LOCK PERMANENTLY</button>
+    </div>
 
-        <div class="pane">
-            <label style="font-size: 12px; font-weight: bold;">🔥 THE RITUAL ARENA</label>
-            <div id="arena-display" class="window-display" style="text-align:center;">
-                <div style="margin-top: 50px; opacity: 0.5;">WAITING FOR COMMAND...</div>
+    <div id="arena-view" style="display:none; flex-direction:column; height:100%;">
+        <div class="header">
+            <div><h2 id="disp-name" style="margin:0;">---</h2><small id="disp-game" style="color:#666;"></small></div>
+            <div id="disp-tag" style="color:#4caf50;">[SECURE]</div>
+        </div>
+        <div class="grid">
+            <div class="pane">
+                <small>🏆 ALLIANCE RECORDS</small>
+                <div id="hof-box" class="display"></div>
+                <div id="officer-ctrl" style="display:none; margin-top:10px;">
+                    <button class="btn" style="background:#ff4444;" onclick="startRitual()">INITIATE DRAWING</button>
+                </div>
             </div>
-            <input type="text" class="ritual-input" placeholder="Enter Ritual Protocol...">
-            <button class="btn-execute">EXECUTE RITUAL</button>
+            <div class="pane">
+                <small>🔥 ARENA CHAT</small>
+                <div id="chat-box" class="display"></div>
+                <input type="text" id="chat-in" class="ritual-input" placeholder="Message...">
+                <button class="btn" onclick="sendMsg()">TRANSMIT</button>
+            </div>
         </div>
     </div>
 </div>
 
+<script>
+    let USER = null;
+    const SCRIPT = "YOUR_APPS_SCRIPT_URL";
+
+    function authenticate() {
+        const key = document.getElementById('auth-key').value;
+        fetch(`${SCRIPT}?key=${key}`).then(r => r.json()).then(data => {
+            USER = data;
+            document.getElementById('login-view').style.display='none';
+            if(data.status === "AUTHORIZED_FIRST_TIME") document.getElementById('setup-view').style.display='block';
+            else launch();
+        });
+    }
+
+    function launch() {
+        document.getElementById('setup-view').style.display='none';
+        document.getElementById('arena-view').style.display='flex';
+        document.getElementById('disp-name').innerText = USER.name;
+        document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game}`;
+        if(USER.role === "OWNER" || USER.role === "OFFICER") document.getElementById('officer-ctrl').style.display='block';
+    }
+
+    function startRitual() {
+        // This would normally trigger a Webhook to notify all members
+        document.getElementById('phoenix-layer').style.display='flex';
+        let count = 10;
+        const timer = setInterval(() => {
+            count--;
+            document.getElementById('countdown').innerText = count;
+            if(count <= 0) {
+                clearInterval(timer);
+                document.getElementById('winner-reveal').style.display='block';
+                document.getElementById('winner-reveal').innerText = "WINNER: CASS_THE_COWBOY";
+                setTimeout(() => { document.getElementById('phoenix-layer').style.display='none'; }, 5000);
+            }
+        }, 1000);
+    }
+</script>
 </body>
 </html>
