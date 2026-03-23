@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RITUAL ENGINE | V14.4 COMMAND NODE</title>
+    <title>RITUAL ENGINE | V14.5 STABLE NODE</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
@@ -14,7 +14,6 @@
         .display { flex:1; background:#000; border:1px solid #111; padding:12px; overflow-y:auto; color:#fff; font-size:13px; margin-bottom:10px; line-height:1.6; }
         .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:12px; margin:8px 0; outline:none; box-sizing:border-box; }
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; letter-spacing:2px; margin-bottom:10px; text-transform:uppercase; transition: 0.2s; }
-        .btn:active { transform: scale(0.98); opacity: 0.8; }
         .btn-sub { background:#222; color:var(--gold); font-size:11px; padding:12px; }
         .btn-warn { background:var(--warn); color:#000; }
         .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; align-items:center; }
@@ -24,9 +23,7 @@
     </style>
 </head>
 <body>
-
 <div id="phoenix-layer"><div class="phoenix-aura"></div><h1 style="color:var(--warn);">RITUAL ACTIVE</h1><div id="countdown" style="font-size:40px;">10</div></div>
-
 <div class="app-shell">
     <div id="auth-view" style="max-width:400px; margin:auto; text-align:center;">
         <h2 style="letter-spacing:5px;">RITUAL ENGINE</h2>
@@ -36,21 +33,16 @@
         </div>
         <div id="dynamic-inputs" style="display:none; margin-top:20px;"></div>
     </div>
-
     <div id="arena-view" style="display:none;">
         <div class="header">
-            <div style="display:flex; align-items:center;">
-                <div id="logo-box" style="width:40px; height:40px; border:1px solid var(--gold); margin-right:10px; background-size:cover; background-color:#111;"></div>
-                <div><h2 id="disp-name" style="margin:0; font-size:16px;"></h2><small id="disp-game" style="color:#666;"></small></div>
-            </div>
+            <div style="display:flex; align-items:center;"><div id="logo-box" style="width:40px; height:40px; border:1px solid var(--gold); margin-right:10px; background-size:cover; background-color:#111;"></div><div><h2 id="disp-name" style="margin:0; font-size:16px;"></h2><small id="disp-game" style="color:#666;"></small></div></div>
             <div id="role-tag" style="border:1px solid var(--gold); padding:2px 6px; font-size:10px;"></div>
         </div>
-        
         <div class="grid">
             <div class="pane"><small>🏆 HALL OF FAME</small><div id="hof-box" class="display">Syncing...</div><div id="admin-tools"></div></div>
             <div class="pane">
                 <small>🔥 ARENA CHAT</small>
-                <div id="chat-box" class="display">Connected.</div>
+                <div id="chat-box" class="display">Connecting...</div>
                 <input type="text" id="chat-in" class="ritual-input" placeholder="Transmission..." onkeydown="if(event.key==='Enter') sendChat()">
                 <button class="btn" id="send-btn" onclick="sendChat()">EXECUTE</button>
             </div>
@@ -58,154 +50,67 @@
         <button class="btn btn-sub" style="margin-top:20px; opacity:0.3;" onclick="location.reload()">DISCONNECT</button>
     </div>
 </div>
-
 <script>
     const SCRIPT = "https://script.google.com/macros/s/AKfycbwderWvL-zU36LWZ2SGZ6BzoNrX87CaPTTs9aDQhP_b_ddekarp9DV4bTAZN7QuGI5B/exec";
     let USER = null;
 
-    window.onload = () => { 
-        const p = new URLSearchParams(window.location.search); 
-        if(p.has('invite')) showEnrollmentScreen(p.get('invite')); 
-    };
-
-    function showKeyInput() { 
-        document.getElementById('gate-container').style.display='none'; 
-        const div = document.getElementById('dynamic-inputs');
-        div.style.display='block'; 
-        div.innerHTML = `<h3>VERIFY KEY</h3><input type="text" id="k-in" class="ritual-input" placeholder="ACCESS KEY"><button class="btn" onclick="validateKey()">VERIFY</button><p><a onclick="location.reload()" style="font-size:10px; color:#666; cursor:pointer;">BACK</a></p>`; 
-    }
-
-    function showCredsInput() { 
-        document.getElementById('gate-container').style.display='none'; 
-        const div = document.getElementById('dynamic-inputs');
-        div.style.display='block'; 
-        div.innerHTML = `<h3>LOGIN</h3><input type="text" id="u-in" class="ritual-input" placeholder="USERNAME"><input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD"><button class="btn" onclick="loginWithCreds()">CONNECT</button><p><a onclick="location.reload()" style="font-size:10px; color:#666; cursor:pointer;">BACK</a></p>`; 
-    }
-
+    window.onload = () => { const p = new URLSearchParams(window.location.search); if(p.has('invite')) showEnrollmentScreen(p.get('invite')); };
+    function showKeyInput() { document.getElementById('gate-container').style.display='none'; const div = document.getElementById('dynamic-inputs'); div.style.display='block'; div.innerHTML = `<h3>VERIFY KEY</h3><input type="text" id="k-in" class="ritual-input" placeholder="ACCESS KEY"><button class="btn" onclick="validateKey()">VERIFY</button><p><a onclick="location.reload()" style="font-size:10px; color:#666;">BACK</a></p>`; }
+    function showCredsInput() { document.getElementById('gate-container').style.display='none'; const div = document.getElementById('dynamic-inputs'); div.style.display='block'; div.innerHTML = `<h3>LOGIN</h3><input type="text" id="u-in" class="ritual-input" placeholder="USERNAME"><input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD"><button class="btn" onclick="loginWithCreds()">CONNECT</button><p><a onclick="location.reload()" style="font-size:10px; color:#666;">BACK</a></p>`; }
+    
     function validateKey() { 
         const k = document.getElementById('k-in').value; 
         fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => { 
             USER = data; 
-            if(data.status === "REQUIRE_LOGIN") { alert("CLAIMED."); location.reload(); } 
-            else if(data.status === "STEP_BRANDING") showBrandingForm(); 
-            else showAccountForm(data.role); 
+            if(data.status === "STEP_BRANDING") showBrandingForm(); 
+            else if(data.status === "STEP_ACCOUNT") showAccountForm(data.role);
+            else location.reload();
         }); 
     }
 
-    function showBrandingForm() { 
-        document.getElementById('dynamic-inputs').innerHTML = `<h3>IDENTITY</h3><input type="text" id="b-name" class="ritual-input" placeholder="ALLIANCE"><input type="text" id="b-game" class="ritual-input" placeholder="GAME"><input type="text" id="b-tag" class="ritual-input" placeholder="TAG"><input type="text" id="b-logo" class="ritual-input" placeholder="LOGO URL"><button class="btn" onclick="saveBranding()">LOCK</button>`; 
-    }
-
-    function saveBranding() { 
-        const n = encodeURIComponent(document.getElementById('b-name').value); 
-        const g = encodeURIComponent(document.getElementById('b-game').value); 
-        const t = encodeURIComponent(document.getElementById('b-tag').value); 
-        const l = encodeURIComponent(document.getElementById('b-logo').value); 
-        fetch(`${SCRIPT}?key=${USER.key}&name=${n}&game=${g}&tag=${t}&logo=${l}`).then(() => validateKey()); 
-    }
-
-    function showAccountForm(role) { 
-        document.getElementById('dynamic-inputs').innerHTML = `<h3>ACTIVATE ${role}</h3><input type="text" id="u-reg" class="ritual-input" placeholder="USERNAME"><input type="password" id="p-reg" class="ritual-input" placeholder="PASSWORD"><button class="btn" onclick="saveAccount()">INITIALIZE</button>`; 
-    }
-
-    function saveAccount() { 
-        const u = document.getElementById('u-reg').value; 
-        const p = document.getElementById('p-reg').value; 
-        fetch(`${SCRIPT}?key=${USER.key}&username=${u}&password=${p}`).then(() => { alert("SECURED."); location.reload(); }); 
-    }
+    function showBrandingForm() { document.getElementById('dynamic-inputs').innerHTML = `<h3>IDENTITY</h3><input type="text" id="b-name" class="ritual-input" placeholder="ALLIANCE"><input type="text" id="b-game" class="ritual-input" placeholder="GAME"><input type="text" id="b-tag" class="ritual-input" placeholder="TAG"><input type="text" id="b-logo" class="ritual-input" placeholder="LOGO URL"><button class="btn" id="lock-btn" onclick="saveBranding()">LOCK</button>`; }
+    function saveBranding() { const btn = document.getElementById('lock-btn'); btn.innerText = "SAVING..."; fetch(`${SCRIPT}?key=${USER.key}&name=${encodeURIComponent(document.getElementById('b-name').value)}&game=${encodeURIComponent(document.getElementById('b-game').value)}&tag=${encodeURIComponent(document.getElementById('b-tag').value)}&logo=${encodeURIComponent(document.getElementById('b-logo').value)}`).then(() => validateKey()); }
 
     function loginWithCreds() {
-        const u = document.getElementById('u-in').value; 
-        const p = document.getElementById('p-in').value;
+        const u = document.getElementById('u-in').value; const p = document.getElementById('p-in').value;
         fetch(`${SCRIPT}?user=${u}&pass=${p}`).then(r => r.json()).then(data => {
-            if(data.status === "INVALID_CREDENTIALS") return alert("DENIED");
-            USER = data; 
-            document.getElementById('auth-view').style.display='none'; 
-            document.getElementById('arena-view').style.display='block';
-            document.getElementById('disp-name').innerText = USER.name; 
-            document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game}`;
-            document.getElementById('role-tag').innerText = USER.role; 
-            if(USER.logo) document.getElementById('logo-box').style.backgroundImage = `url('${USER.logo}')`;
-            
-            loadGist();
-            setInterval(loadGist, 5000); 
-            
-            const tools = document.getElementById('admin-tools'); 
-            tools.innerHTML = `<button class="btn btn-sub" onclick="copyInvite('MEMBER')">INVITE MEMBER</button>`;
-            if(USER.role === "OWNER") tools.innerHTML += `<button class="btn btn-sub" onclick="copyInvite('OFFICER')">INVITE OFFICER</button>`;
+            if(data.status === "INVALID_CREDENTIALS") return;
+            USER = data; document.getElementById('auth-view').style.display='none'; document.getElementById('arena-view').style.display='block';
+            document.getElementById('disp-name').innerText = USER.name; document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game}`;
+            document.getElementById('role-tag').innerText = USER.role; if(USER.logo) document.getElementById('logo-box').style.backgroundImage = `url('${USER.logo}')`;
+            loadGist(); setInterval(loadGist, 5000); 
+            const tools = document.getElementById('admin-tools'); tools.innerHTML = `<button class="btn btn-sub" id="inv-mem" onclick="copyInvite('MEMBER')">INVITE MEMBER</button>`;
+            if(USER.role === "OWNER") tools.innerHTML += `<button class="btn btn-sub" id="inv-off" onclick="copyInvite('OFFICER')">INVITE OFFICER</button>`;
             if(USER.role === "OWNER" || USER.role === "OFFICER") tools.innerHTML += `<button class="btn btn-warn" id="rit-start" onclick="startRitual()">START RITUAL</button>`;
         });
     }
 
     function sendChat() {
-        const input = document.getElementById('chat-in');
-        const msg = input.value.trim();
-        const btn = document.getElementById('send-btn');
-        if (!msg) return;
-        
-        btn.innerText = "SENDING...";
-        input.disabled = true;
-
-        fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`)
-            .then(() => {
-                input.value = '';
-                input.disabled = false;
-                btn.innerText = "EXECUTE";
-                loadGist();
-            })
-            .catch(err => {
-                alert("CHAT ERROR: Check connection.");
-                input.disabled = false;
-                btn.innerText = "EXECUTE";
-            });
+        const input = document.getElementById('chat-in'); const msg = input.value.trim(); const btn = document.getElementById('send-btn');
+        if (!msg) return; btn.innerText = "SENDING..."; input.disabled = true;
+        fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => { input.value = ''; input.disabled = false; btn.innerText = "EXECUTE"; loadGist(); });
     }
 
     function loadGist() {
-        fetch(`https://api.github.com/gists/${USER.gistId}?nocache=${Date.now()}`)
-            .then(r => r.json())
-            .then(g => {
-                const c = JSON.parse(g.files[USER.gistFile].content);
-                // Hall of Fame
-                const h = c.history || [];
-                document.getElementById('hof-box').innerHTML = h.slice().reverse().map(i => `<div>[${i.date}] <b>${i.name}</b></div>`).join('');
-                // Chat
-                const chats = c.chat || [];
-                document.getElementById('chat-box').innerHTML = chats.map(m => `<div><span style="color:var(--gold)">${m.user}:</span> ${m.text} <small style="font-size:8px;opacity:0.3">${m.time}</small></div>`).join('');
-                document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-            });
+        fetch(`https://api.github.com/gists/${USER.gistId}?nocache=${Date.now()}`).then(r => r.json()).then(g => {
+            const content = JSON.parse(g.files[USER.gistFile].content);
+            const h = content.history || [];
+            document.getElementById('hof-box').innerHTML = h.length > 0 ? h.slice().reverse().map(i => `<div>[${i.date}] <b>${i.name}</b></div>`).join('') : "No Records Found.";
+            const c = content.chat || [];
+            document.getElementById('chat-box').innerHTML = c.length > 0 ? c.map(m => `<div><span style="color:var(--gold)">${m.user}:</span> ${m.text} <small style="font-size:8px;opacity:0.3">${m.time}</small></div>`).join('') : "Welcome to the Arena.";
+            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+        });
     }
 
     function startRitual() {
-        document.getElementById('phoenix-layer').style.display='flex'; 
-        let c=10; 
-        let t=setInterval(() => { 
-            c--; 
-            document.getElementById('countdown').innerText=c; 
-            if(c<=0){ 
-                clearInterval(t); 
-                document.getElementById('phoenix-layer').style.display='none'; 
-                const w=prompt("WINNER:"); 
-                if(w) fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => { alert("LOGGED"); loadGist(); }); 
-            }
-        }, 1000);
+        document.getElementById('phoenix-layer').style.display='flex'; let c=10; 
+        let t=setInterval(() => { c--; document.getElementById('countdown').innerText=c; if(c<=0){ clearInterval(t); document.getElementById('phoenix-layer').style.display='none'; const w=prompt("WINNER:"); if(w) fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => loadGist()); }}, 1000);
     }
-
     function copyInvite(role) { 
         const link = `${window.location.origin}${window.location.pathname}?invite=${role}`;
-        navigator.clipboard.writeText(link).then(() => alert(`${role} INVITE COPIED`)); 
-    }
-
-    function showEnrollmentScreen(role) { 
-        document.getElementById('gate-container').style.display='none'; 
-        const div = document.getElementById('dynamic-inputs');
-        div.style.display='block'; 
-        div.innerHTML = `<h3>ENROLLMENT</h3><p style="font-size:10px;">ROLE: ${role}</p><input type="email" id="e-in" class="ritual-input" placeholder="EMAIL"><button class="btn" onclick="triggerEmail('${role}')">REQUEST KEY</button>`; 
-    }
-
-    function triggerEmail(role) { 
-        const e = document.getElementById('e-in').value; 
-        if(!e) return alert("EMAIL REQ"); 
-        fetch(`${SCRIPT}?enroll_email=${encodeURIComponent(e)}&invite_role=${role}`).then(() => { alert("KEY SENT."); location.href = location.origin + location.pathname; }); 
+        navigator.clipboard.writeText(link);
+        const btn = role === "MEMBER" ? document.getElementById('inv-mem') : document.getElementById('inv-off');
+        const oldTxt = btn.innerText; btn.innerText = "COPIED!"; setTimeout(() => btn.innerText = oldTxt, 2000);
     }
 </script>
 </body>
