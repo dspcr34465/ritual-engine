@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ritual Engine | Secure Terminal</title>
+    <style>
+        :root { --gold: #d4af37; --bg: #0d0d0d; --panel: #151515; }
+        
+        body, html { 
+            margin: 0; padding: 0; background: var(--bg); 
+            color: var(--gold); font-family: 'Courier New', monospace;
+            height: 100vh; width: 100vw; overflow: hidden;
+        }
+
+        /* --- TACTICAL GRID LAYOUT --- */
+        .app-container {
+            display: flex; flex-direction: column;
+            height: 100vh; padding: 20px; box-sizing: border-box;
+        }
+
+        .top-bar {
+            flex: 0 0 auto; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 2px solid var(--gold);
+            padding-bottom: 15px; margin-bottom: 20px;
+        }
+
+        .arena-main {
+            flex: 1; display: flex; gap: 20px; overflow: hidden;
+        }
+
+        .pane {
+            flex: 1; display: flex; flex-direction: column;
+            background: var(--panel); border: 1px solid #333;
+            border-radius: 4px; padding: 20px; box-shadow: inset 0 0 20px #000;
+        }
+
+        .window-display {
+            flex: 1; background: #000; border: 1px solid #222;
+            margin-top: 10px; padding: 15px; overflow-y: auto;
+            font-size: 14px; color: #fff; line-height: 1.6;
+        }
+
+        /* Elements */
+        .ritual-input { 
+            width: 100%; background: #000; color: #fff; border: 1px solid var(--gold);
+            padding: 15px; margin-top: 15px; font-family: inherit; font-size: 16px;
+        }
+        .btn-execute {
+            width: 100%; background: var(--gold); color: #000; border: none;
+            padding: 18px; font-weight: bold; margin-top: 10px; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+
+        /* Mobile Adaptability for the Popup */
+        @media (max-width: 800px) {
+            .arena-main { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="top-bar">
+        <div>
+            <h1 style="margin:0; font-size: 22px; letter-spacing: 5px;">RITUAL ENGINE</h1>
+            <span style="font-size: 10px; color: #666;">SECURE SaaS PORTAL | DAVIS SYSTEMS PC</span>
+        </div>
+        <div id="status-node" style="color: #4caf50; font-size: 12px;">● NODE_ACTIVE</div>
+    </div>
+
+    <div class="arena-main">
+        <div class="pane">
+            <label style="font-size: 12px; font-weight: bold;">🏆 ALLIANCE HALL OF FAME</label>
+            <div id="hof-display" class="window-display">
+                [03/23 15:15] HANDSHAKE VERIFIED...<br>
+                [03/23 15:16] GIST CLOUD SYNCED...<br>
+            </div>
+        </div>
+
+        <div class="pane">
+            <label style="font-size: 12px; font-weight: bold;">🔥 THE RITUAL ARENA</label>
+            <div id="arena-display" class="window-display" style="text-align:center;">
+                <div style="margin-top: 50px; opacity: 0.5;">WAITING FOR COMMAND...</div>
+            </div>
+            <input type="text" class="ritual-input" placeholder="Enter Ritual Protocol...">
+            <button class="btn-execute">EXECUTE RITUAL</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
