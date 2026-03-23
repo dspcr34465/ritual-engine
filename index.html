@@ -83,7 +83,7 @@
 
 <script>
     // --- CONFIGURATION ---
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbwHNGS5NF8NzIc3pRjfHPUrGaNguf_AtJWar4CjY0W_tpU9y6e8Rqb0UdBbm0Qhf6-v/exec"; 
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbwderWvL-zU36LWZ2SGZ6BzoNrX87CaPTTs9aDQhP_b_ddekarp9DV4bTAZN7QuGI5B/exec"; 
     let USER = null;
 
     // --- SECURITY-HARDENED EVENT LISTENERS ---
@@ -120,7 +120,7 @@
                 }
             })
             .catch(err => {
-                alert(err.message === "INVALID_KEY" ? "ACCESS DENIED" : "COMMUNICATIONS FAILURE");
+                alert(err.message === "INVALID_KEY" ? "ACCESS DENIED": "COMMUNICATIONS FAILURE");
                 btn.innerText = "INITIALIZE";
                 btn.disabled = false;
             });
