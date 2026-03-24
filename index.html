@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V18.4 BULLETPROOF</title>
+    <title>RITUAL ENGINE | V18.5 SURGICAL</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
@@ -28,8 +28,8 @@
         <h2 style="letter-spacing:5px;">RITUAL ENGINE</h2>
         <div id="status-hud"></div>
         <div id="gate-container">
-            <button class="btn" onclick="showKeyInput()">CLAIM ACCESS NODE</button>
-            <button class="btn btn-sub" onclick="showCredsInput()">INITIALIZE SESSION</button>
+            <button id="gate-key" class="btn" onclick="showKeyInput()">CLAIM ACCESS NODE</button>
+            <button id="gate-session" class="btn btn-sub" onclick="showCredsInput()">INITIALIZE SESSION</button>
         </div>
         <div id="dynamic-inputs" style="display:none; margin-top:20px;"></div>
     </div>
@@ -56,30 +56,26 @@
 </div>
 
 <script>
-    // USES BACKTICKS TO PREVENT SYNTAX BREAKS
-    const SCRIPT = `https://script.google.com/macros/s/AKfycbwhbT6YsyquWCmiT07oXGp1MfaZws9bq5xX-QrC8V9rBKSOQKqGXuKmwOLcVkly4-oo/exec
-`;
+    // URL SPLIT TO PREVENT SYNTAX ERRORS ON LONG STRINGS
+    const P1 = "https://script.google.com/macros/s/";
+    const P2 = "AKfycbwPsOFsUOj1NqRfryW94AqbvEcCpszru-xDPTJ6cLwtvJ-vok5frKKYn03n4pGnMC3l";
+    const P3 = "/exec";
+    const SCRIPT = P1 + P2 + P3;
     
     let USER = null;
 
     function showCredsInput() { 
-        const gate = document.getElementById('gate-container');
+        document.getElementById('gate-container').style.display='none'; 
         const div = document.getElementById('dynamic-inputs');
-        if(gate && div) {
-            gate.style.display='none'; 
-            div.style.display='block'; 
-            div.innerHTML = `<h3>INITIALIZE</h3><input type="text" id="u-in" class="ritual-input" placeholder="USERNAME" autocapitalize="none"><input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD"><button class="btn" onclick="loginWithCreds()">CONNECT</button><a onclick="location.reload()">BACK</a>`; 
-        }
+        div.style.display='block'; 
+        div.innerHTML = '<h3>INITIALIZE</h3><input type="text" id="u-in" class="ritual-input" placeholder="USERNAME" autocapitalize="none"><input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD"><button class="btn" onclick="loginWithCreds()">CONNECT</button><a onclick="location.reload()">BACK</a>'; 
     }
 
     function showKeyInput() { 
-        const gate = document.getElementById('gate-container');
+        document.getElementById('gate-container').style.display='none'; 
         const div = document.getElementById('dynamic-inputs');
-        if(gate && div) {
-            gate.style.display='none'; 
-            div.style.display='block'; 
-            div.innerHTML = `<h3>VERIFY NODE</h3><input type="text" id="k-in" class="ritual-input" placeholder="RITUAL-XXXX" style="text-transform:uppercase;"><button class="btn" onclick="validateKey()">VERIFY</button><a onclick="location.reload()">BACK</a>`; 
-        }
+        div.style.display='block'; 
+        div.innerHTML = '<h3>VERIFY NODE</h3><input type="text" id="k-in" class="ritual-input" placeholder="RITUAL-XXXX" style="text-transform:uppercase;"><button class="btn" onclick="validateKey()">VERIFY</button><a onclick="location.reload()">BACK</a>'; 
     }
 
     function loginWithCreds() {
@@ -87,9 +83,8 @@
         const p = document.getElementById('p-in').value.trim(); 
         const hud = document.getElementById('status-hud');
         if(!u || !p) return;
-        
         hud.innerText = "LINKING...";
-        fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`)
+        fetch(SCRIPT + "?user=" + encodeURIComponent(u) + "&pass=" + encodeURIComponent(p))
             .then(res => res.json()).then(data => {
                 if(data.status === "AUTHORIZED") {
                     USER = data;
@@ -103,7 +98,7 @@
     function validateKey() {
         const k = document.getElementById('k-in').value.trim().toUpperCase();
         if(!k) return;
-        fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => {
+        fetch(SCRIPT + "?key=" + k).then(r => r.json()).then(data => {
             if(data.status === "AUTHORIZED") {
                 USER = data;
                 localStorage.setItem('ritual_user', JSON.stringify(data));
@@ -117,14 +112,14 @@
         document.getElementById('auth-view').style.display = 'none';
         document.getElementById('arena-view').style.display = 'block';
         document.getElementById('disp-name').innerText = USER.name;
-        document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game}`;
+        document.getElementById('disp-game').innerText = "PROTOCOL: " + USER.game;
         document.getElementById('role-tag').innerText = USER.role;
         const logo = document.getElementById('logo-box');
-        if(USER.logo && USER.logo.includes('http')) logo.style.backgroundImage = `url('${USER.logo}')`;
+        if(USER.logo && USER.logo.includes('http')) logo.style.backgroundImage = "url('" + USER.logo + "')";
         
         const tools = document.getElementById('admin-tools');
-        tools.innerHTML = `<button class="btn btn-sub" onclick="copyInvite('MEMBER')">INVITE MEMBER</button>`;
-        if(USER.role === "OWNER") tools.innerHTML += `<button class="btn btn-sub" onclick="copyInvite('OFFICER')">INVITE OFFICER</button>`;
+        tools.innerHTML = '<button class="btn btn-sub" onclick="copyInvite(\'MEMBER\')">INVITE MEMBER</button>';
+        if(USER.role === "OWNER") tools.innerHTML += '<button class="btn btn-sub" onclick="copyInvite(\'OFFICER\')">INVITE OFFICER</button>';
         
         loadSync(); 
         setInterval(loadSync, 8000); 
@@ -132,13 +127,13 @@
 
     function loadSync() {
         if(!USER) return;
-        fetch(`${SCRIPT}?get_gist=true&key=${USER.key}`)
+        fetch(SCRIPT + "?get_gist=true&key=" + USER.key)
             .then(r => r.json())
             .then(g => {
                 const h = g.history || [];
-                document.getElementById('hof-box').innerHTML = h.slice().reverse().map(i => `<div>[${i.date}] ${i.name}</div>`).join('') || "No Records.";
+                document.getElementById('hof-box').innerHTML = h.slice().reverse().map(i => "<div>[" + i.date + "] " + i.name + "</div>").join('') || "No Records.";
                 const c = g.chat || [];
-                document.getElementById('chat-box').innerHTML = c.map(m => `<div><span style="color:var(--gold)">${m.user}:</span> ${m.text}</div>`).join('') || "Welcome.";
+                document.getElementById('chat-box').innerHTML = c.map(m => "<div><span style=\"color:var(--gold)\">" + m.user + ":</span> " + m.text + "</div>").join('') || "Welcome.";
                 document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
             }).catch(e => { console.log("Sync..."); });
     }
@@ -146,14 +141,14 @@
     function sendChat() {
         const input = document.getElementById('chat-in'); const msg = input.value.trim();
         if (!msg || !USER) return;
-        fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => { 
+        fetch(SCRIPT + "?key=" + USER.key + "&chat_msg=" + encodeURIComponent(msg)).then(() => { 
             input.value = ''; 
             loadSync(); 
         });
     }
 
     function copyInvite(role) { 
-        const link = `${window.location.origin}${window.location.pathname}?invite=${role}`;
+        const link = window.location.origin + window.location.pathname + "?invite=" + role;
         navigator.clipboard.writeText(link); alert("COPIED!");
     }
 
