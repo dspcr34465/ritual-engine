@@ -3,39 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | V31.7</title>
+    <title>RITUAL | OMEGA V32.0</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
-        :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; }
+        :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --fire: #ff6600; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
         
-        /* HARD-STATE ISOLATION */
-        .screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index: 100; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        /* HARD STATE LAYERS */
+        .screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index: 100; display: none; overflow-y: auto; padding: 15px; box-sizing: border-box; }
         .screen.active { display: flex !important; flex-direction: column; align-items: center; }
         #auth-view { justify-content: center; z-index: 1000; }
 
-        .terminal-box { width: 100%; max-width: 350px; text-align: center; border: 1px solid #111; padding: 30px; background: var(--panel); }
-        .arena-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 12px; }
+        .pane { background:var(--panel); border:1px solid #222; padding:15px; width: 100%; max-width: 500px; box-sizing: border-box; margin-bottom: 12px; cursor: pointer; position: relative; }
+        .pane::after { content: "TAP TO FOCUS"; position: absolute; top: 5px; right: 8px; font-size: 8px; color: #333; }
         
-        /* COMPONENTS */
-        .pane { background:var(--panel); border:1px solid #222; padding:15px; width: 100%; box-sizing: border-box; }
         .seal-module { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--gold); background-size: cover; background-position: center; display: flex; align-items: flex-end; }
         .seal-banner { width: 100%; background: rgba(0,0,0,0.85); padding: 12px; text-align: center; border-top: 1px solid var(--gold); }
-        .av-circle { width: 60px; height: 60px; border: 1px solid var(--gold); border-radius: 50%; background-size: cover; background-position: center; background-color: #111; display: flex; align-items: center; justify-content: center; }
+        
+        .av-circle { width: 60px; height: 60px; border: 1px solid var(--gold); border-radius: 50%; background-size: cover; background-position: center; background-color: #111; display: flex; align-items: center; justify-content: center; position: relative; }
         .av-circle:empty::before { content: "+"; font-size: 20px; opacity: 0.4; }
 
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:16px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top: 10px; }
         .in { width:100%; background:#000; color:#fff; border:1px solid #333; padding:16px; margin:10px 0; box-sizing:border-box; text-align:center; }
         
-        /* FOCUS SYSTEM */
         .focus-layer { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index: 2000; background: #000; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; }
         .focus-layer.active { display: flex; }
+        .ritual-flash { color: var(--fire); text-align: center; animation: flicker 0.2s infinite; font-weight: bold; }
+        @keyframes flicker { 0%, 100% { opacity:1; } 50% { opacity:0.3; } }
     </style>
 </head>
 <body>
 
     <div id="auth-view" class="screen active">
-        <div class="terminal-box">
+        <div style="width:100%; max-width:350px; text-align:center; border:1px solid #111; padding:30px; background:var(--panel);">
             <h1 style="letter-spacing:10px;">RITUAL</h1>
             <small id="hud">[ SYSTEM: STANDBY ]</small>
             <input id="u" class="in" placeholder="IDENTITY" autocapitalize="none">
@@ -45,33 +45,41 @@
     </div>
 
     <div id="arena-view" class="screen">
-        <div class="arena-container">
-            <div id="seal-box" class="seal-module"><div class="seal-banner"><h2 id="all-n"></h2><small id="u-r" style="letter-spacing:3px;"></small></div></div>
-            <div class="pane" onclick="focusModule('VAULT')">
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <div id="my-av" class="av-circle"></div>
-                    <div style="flex:1;"><div id="my-name" style="font-weight:bold; color:#fff;"></div><div id="my-bio" style="font-size:10px; color:#666;"></div></div>
-                </div>
+        <div id="seal-box" class="seal-module" style="width:100%; max-width:500px; margin-bottom:12px;">
+            <div class="seal-banner"><h2 id="all-n" style="margin:0; font-size:18px;"></h2><small id="u-r" style="letter-spacing:3px; font-weight:bold;"></small></div>
+        </div>
+        
+        <div class="pane" onclick="focusModule('VAULT')">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <div id="my-av" class="av-circle"></div>
+                <div style="flex:1;"><div id="my-name" style="font-weight:bold; color:#fff; font-size:14px;"></div><div id="my-bio-pre" style="font-size:10px; color:#666; font-style:italic;"></div></div>
             </div>
-            <div class="pane" onclick="focusModule('CHAT')"><small>🔥 CHAT</small><div id="chat-pre" style="height:60px; overflow:hidden; font-size:11px;"></div></div>
-            <div id="cmd" class="pane" style="display:none; border:1px solid #ff444433;">
-                <button class="btn" onclick="document.getElementById('logo-up').click()">BRAND SEAL</button>
-                <input type="file" id="logo-up" accept="image/*" style="display:none" onchange="procLogo(this)">
-                <button class="btn" onclick="location.reload()" style="background:none; color:#444;">OFFLINE</button>
-            </div>
+        </div>
+
+        <div class="pane" onclick="focusModule('HALL-OF-FAME')"><small>🏆 HALL OF FAME</small><div id="hof-pre" style="height:60px; overflow:hidden; font-size:10px; margin-top:5px;"></div></div>
+        <div class="pane" onclick="focusModule('ARENA-CHAT')"><small>🔥 CHAT</small><div id="chat-pre" style="height:60px; overflow:hidden; font-size:11px; margin-top:5px;"></div></div>
+
+        <div id="cmd" class="pane" style="display:none; border:1px solid #ff444433; cursor:default;">
+            <b style="color:var(--fire); font-size:10px;">COMMAND CENTER</b>
+            <button class="btn" onclick="document.getElementById('logo-up').click()">BRAND SEAL</button>
+            <input type="file" id="logo-up" accept="image/*" style="display:none" onchange="procLogo(this)">
+            <button class="btn" onclick="focusModule('RECON')">RECONCILE RECRUIT</button>
+            <button class="btn" onclick="document.getElementById('f-up').click()" style="background:var(--fire)">COMMENCE RITUAL</button>
+            <input type="file" id="f-up" accept=".csv, .xlsx" style="display:none;" onchange="handleRaffle(this)">
+            <button onclick="location.reload()" style="background:none; color:#444; width:100%; border:none; margin-top:15px;">DISCONNECT</button>
         </div>
     </div>
 
     <div id="focus-layer" class="focus-layer">
-        <button onclick="exitFocus()" style="color:var(--gold); background:none; border:none; margin-bottom:20px;">← BACK</button>
-        <div id="focus-body" style="flex:1;"></div>
+        <button onclick="exitFocus()" style="color:var(--gold); background:none; border:none; margin-bottom:20px; text-align:left; font-weight:bold;">← BACK TO ARENA</button>
+        <div id="focus-body" style="flex:1; overflow-y:auto; border:1px solid #111; padding:10px;"></div>
+        <div id="focus-controls"></div>
     </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbyWVNoAtfS0cJBHyfH1R-HKuxjMLdPl9C0WXJmSo6Woaz42xWwTtpSwxECjgeBFksEP/exec";
-    let USER = null;
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbws1snZb3ZOcasy3L2G6NPVqfrrMdaAxmiNYzWmay8WH0Ne1y5FDjPiGVuZ7VHnHdgb/exec";
+    let USER = null; let RITUAL = false;
 
-    // THE CORS KILLER ENGINE
     function apiCall(params) {
         const old = document.getElementById('ritual-api'); if(old) old.remove();
         const s = document.createElement('script');
@@ -81,21 +89,16 @@
     }
 
     function handleResponse(d) {
-        if(d.status === "AUTHORIZED") {
-            USER = d; renderArena();
-        } else if (d.chat || d.history) {
-            updateArenaData(d);
-        } else if (d.status === "SUCCESS") {
-            console.log("Vault Updated");
-        } else if (d.status === "DENIED") {
-            document.getElementById('hud').innerText = "[ ACCESS DENIED ]";
-        }
+        if(d.status === "AUTHORIZED") { USER = d; renderArena(); }
+        else if (d.chat || d.history) { updateArenaData(d); }
+        else if (d.status === "SUCCESS") { console.log("Success"); exitFocus(); }
+        else if (d.status === "DENIED") { document.getElementById('hud').innerText = "[ DENIED ]"; }
     }
 
     function login() {
         const u = document.getElementById('u').value.trim();
         const p = document.getElementById('p').value.trim();
-        document.getElementById('hud').innerText = "[ CONNECTING... ]";
+        document.getElementById('hud').innerText = "[ OPENING PORTAL... ]";
         apiCall(`user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
     }
 
@@ -105,7 +108,7 @@
         document.getElementById('all-n').innerText = USER.alliance;
         document.getElementById('u-r').innerText = USER.role;
         document.getElementById('my-name').innerText = USER.user.toUpperCase();
-        document.getElementById('my-bio').innerText = USER.bio;
+        document.getElementById('my-bio-pre').innerText = USER.bio || "Write something here...";
         if(USER.logo) document.getElementById('seal-box').style.backgroundImage = `url('${USER.logo}')`;
         if(USER.av) document.getElementById('my-av').style.backgroundImage = `url('${USER.av}')`;
         if(USER.role !== "MEMBER") document.getElementById('cmd').style.display='block';
@@ -115,53 +118,101 @@
     function focusModule(type) {
         const layer = document.getElementById('focus-layer');
         const body = document.getElementById('focus-body');
-        layer.classList.add('active');
+        const ctrl = document.getElementById('focus-controls');
+        layer.classList.add('active'); body.innerHTML = ""; ctrl.innerHTML = "";
+
         if(type === 'VAULT') {
-            body.innerHTML = `<div style="text-align:center;"><div class="av-circle" style="width:100px; height:100px; margin:auto; background-image:url('${USER.av}')" onclick="document.getElementById('av-up').click()"></div><textarea id="b-in" class="in" style="height:100px;">${USER.bio}</textarea><button class="btn" onclick="saveVault()">SAVE</button><input type="file" id="av-up" style="display:none" onchange="procAv(this)"></div>`;
+            body.innerHTML = `<div style="text-align:center;"><div class="av-circle" id="av-focus" style="width:120px; height:120px; margin:auto; background-image:url('${USER.av}')" onclick="document.getElementById('av-up').click()"></div><h3>${USER.user.toUpperCase()}</h3><textarea id="b-in" class="in" style="height:150px; text-align:left;">${USER.bio}</textarea></div>`;
+            ctrl.innerHTML = `<button class="btn" onclick="saveVault()">RATIFY IDENTITY</button><input type="file" id="av-up" style="display:none" onchange="procAv(this)">`;
+        } else if(type === 'ARENA-CHAT') {
+            body.innerHTML = `<div id="chat-full">${document.getElementById('chat-pre').innerHTML}</div>`;
+            ctrl.innerHTML = `<input id="msg-f" class="in" placeholder="Transmit..."><button class="btn" onclick="sendChatF()">EXECUTE</button>`;
+        } else if(type === 'HALL-OF-FAME') {
+            body.innerHTML = document.getElementById('hof-pre').innerHTML;
+        } else if(type === 'RECON') {
+            body.innerHTML = `<div style="text-align:center;"><h3>RECONCILE</h3><input id="rec-e" class="in" placeholder="EMAIL"><select id="rec-r" class="in"><option value="MEMBER">MEMBER</option><option value="OFFICER">OFFICER</option></select></div>`;
+            ctrl.innerHTML = `<button class="btn" onclick="runRecon()">AMEND NODE</button>`;
         }
     }
 
     function exitFocus() { document.getElementById('focus-layer').classList.remove('active'); }
 
-    function procAv(input) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const cvs = document.createElement('canvas'); cvs.width=128; cvs.height=128;
-                cvs.getContext('2d').drawImage(img, 0, 0, 128, 128);
-                USER.av = cvs.toDataURL("image/jpeg", 0.5);
-                saveVault();
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(input.files[0]);
+    function updateArenaData(d) {
+        const chatHtml = (d.chat || []).map(m => `<div style="margin-bottom:8px; border-left:1px solid var(--gold); padding-left:8px;"><b>${m.user}:</b><br>${m.text}</div>`).join('');
+        const hofHtml = (d.history || []).map(h => `<div style="border-bottom:1px solid #111; padding:8px;">[${h.date}] ${h.name}</div>`).join('');
+        document.getElementById('chat-pre').innerHTML = chatHtml;
+        document.getElementById('hof-pre').innerHTML = hofHtml;
+        if(document.getElementById('focus-layer').classList.contains('active')) {
+            if(document.getElementById('chat-full')) document.getElementById('chat-full').innerHTML = chatHtml;
+            else if(document.getElementById('hof-pre')) document.getElementById('focus-body').innerHTML = hofHtml;
+        }
     }
 
     function saveVault() {
-        const b = document.getElementById('b-in') ? document.getElementById('b-in').value : USER.bio;
+        const b = document.getElementById('b-in').value;
         apiCall(`key=${USER.key}&update_id=true&bio=${encodeURIComponent(b)}&av=${encodeURIComponent(USER.av)}`);
-        USER.bio = b; document.getElementById('my-bio').innerText = b;
-        exitFocus();
+        USER.bio = b; document.getElementById('my-bio-pre').innerText = b;
+    }
+
+    function runRecon() {
+        apiCall(`initiate_email=${encodeURIComponent(document.getElementById('rec-e').value)}&from_owner=${USER.key}&role=${document.getElementById('rec-r').value}`);
+    }
+
+    function sendChatF() {
+        const m = document.getElementById('msg-f').value; if(!m) return;
+        apiCall(`key=${USER.key}&user_name=${encodeURIComponent(USER.user)}&chat_msg=${encodeURIComponent(m)}`);
+        document.getElementById('msg-f').value = '';
+    }
+
+    function procAv(input) {
+        const reader = new FileReader(); reader.onload = (e) => {
+            const img = new Image(); img.onload = () => {
+                const cvs = document.createElement('canvas'); cvs.width=128; cvs.height=128;
+                cvs.getContext('2d').drawImage(img, 0, 0, 128, 128);
+                USER.av = cvs.toDataURL("image/jpeg", 0.5);
+                document.getElementById('av-focus').style.backgroundImage = `url('${USER.av}')`;
+                document.getElementById('my-av').style.backgroundImage = `url('${USER.av}')`;
+                saveVault();
+            }; img.src = e.target.result;
+        }; reader.readAsDataURL(input.files[0]);
     }
 
     function procLogo(input) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
+        const reader = new FileReader(); reader.onload = (e) => {
+            const img = new Image(); img.onload = () => {
                 const cvs = document.createElement('canvas'); cvs.width=500; cvs.height=500;
                 cvs.getContext('2d').drawImage(img, 0, 0, 500, 500);
                 apiCall(`key=${USER.key}&update_logo=${encodeURIComponent(cvs.toDataURL("image/jpeg", 0.6))}`);
                 setTimeout(() => location.reload(), 2000);
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(input.files[0]);
+            }; img.src = e.target.result;
+        }; reader.readAsDataURL(input.files[0]);
     }
 
-    function updateArenaData(d) {
-        document.getElementById('chat-pre').innerHTML = (d.chat || []).map(m => `<div><b>${m.user}:</b> ${m.text}</div>`).join('');
+    function handleRaffle(input) {
+        const reader = new FileReader(); reader.onload = (e) => {
+            const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+            let hat = []; rows.forEach(r => { if(r[0] && r[1]) for(let i=0; i<r[1]; i++) hat.push(r[0]); });
+            if(hat.length) startRitual(hat);
+        }; reader.readAsArrayBuffer(input.files[0]);
+    }
+
+    function startRitual(hat) {
+        RITUAL = true; const h = document.getElementById('hof-pre');
+        h.innerHTML = "<div class='ritual-flash'><br>THE PHOENIX HAS BEEN FED...</div>";
+        setTimeout(() => {
+            let t = 10;
+            const i = setInterval(() => {
+                const n = hat[Math.floor(Math.random()*hat.length)];
+                h.innerHTML = `<div style='text-align:center;'><br><span style='color:#444'>${n}</span><br><span style='font-size:40px'>${t}</span></div>`;
+                if(t-- <= 0) {
+                    clearInterval(i); const w = hat[Math.floor(Math.random()*hat.length)];
+                    h.innerHTML = `<div class='ritual-flash' style='color:var(--gold)'><br>RITUAL COMPLETE<br><br><span style='font-size:22px'>${w}</span></div>`;
+                    apiCall(`key=${USER.key}&log_winner=${encodeURIComponent(w)}`);
+                    setTimeout(() => { RITUAL = false; }, 5000);
+                }
+            }, 1000);
+        }, 2000);
     }
 </script>
 </body>
