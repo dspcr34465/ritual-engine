@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V27.2</title>
+    <title>RITUAL ENGINE | V27.5 MASTER</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; --fire: #ff6600; }
@@ -11,10 +11,13 @@
         .app-shell { padding:15px; max-width:800px; margin:auto; }
         .pane { background:var(--panel); border:1px solid #222; padding:15px; margin-bottom:15px; }
         
-        /* THE GREAT SEAL (1:1 Branding Module) */
+        /* THE GREAT SEAL (Fixed 1:1 Master Branding) */
         .seal-module { 
             width: 100%; aspect-ratio: 1/1; border: 2px solid var(--gold); 
-            background-size: cover; background-position: center; background-repeat: no-repeat;
+            /* THE CSS FIX: Ensuring 1:1 Scaling and Centering */
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat;
             margin-bottom: 15px; display: flex; align-items: flex-end; 
             background-color: #050505; box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
         }
@@ -99,10 +102,16 @@
         const res = await fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
         const d = await res.json();
         if(d.status === "AUTHORIZED") {
-            USER = d; showView('arena-view');
+            USER = d; 
+            showView('arena-view');
             document.getElementById('all-n').innerText = USER.alliance;
             document.getElementById('u-r').innerText = USER.role;
-            if(USER.logo) document.getElementById('seal-box').style.backgroundImage = "url('" + USER.logo + "')";
+            
+            // THE VISUAL HANDSHAKE FIX (CSS scaling is now applied)
+            if(USER.logo) {
+                document.getElementById('seal-box').style.backgroundImage = "url('" + USER.logo + "')";
+            }
+            
             if(USER.role !== "MEMBER") {
                 document.getElementById('cmd').style.display='block';
                 if(USER.role === "OWNER") document.getElementById('off-btn').style.display='block';
@@ -166,25 +175,4 @@
             setTimeout(() => {
                 let t = 10;
                 const i = setInterval(() => {
-                    const randomName = hat[Math.floor(Math.random()*hat.length)];
-                    h.innerHTML = `<div style='text-align:center;'><br><span style='color:#444'>${randomName}</span><br><span style='font-size:40px'>${t}</span></div>`;
-                    if(t-- <= 0) {
-                        clearInterval(i); const w = hat[Math.floor(Math.random()*hat.length)];
-                        h.innerHTML = `<div class='ritual-flash' style='color:var(--gold)'><br>RITUAL COMPLETE<br><br><span style='font-size:24px'>${w}</span></div>`;
-                        fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => {
-                            setTimeout(() => { RITUAL = false; sync(); }, 5000);
-                        });
-                    }
-                }, 1000);
-            }, 2000);
-        }, 2000);
-    }
-
-    async function sendChat() {
-        const m = document.getElementById('msg').value; if(!m) return;
-        await fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(m)}`);
-        document.getElementById('msg').value = ''; sync();
-    }
-</script>
-</body>
-</html>
+                    const randomName = hat[Math.floor(Math
