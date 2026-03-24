@@ -2,162 +2,81 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V18.6 ZERO-GHOST</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RITUAL ENGINE | V19.0 CORE</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
-        body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
-        .app-shell { display:flex; flex-direction:column; padding:15px; box-sizing:border-box; }
-        .grid { display:flex; flex-direction:column; gap:15px; } 
-        @media (min-width: 900px) { .grid { flex-direction:row; height: 75vh; } }
-        .pane { flex:1; background:var(--panel); border:1px solid #222; padding:15px; display:flex; flex-direction:column; min-height:350px; }
-        .display { flex:1; background:#000; border:1px solid #111; padding:12px; overflow-y:auto; color:#fff; font-size:13px; margin-bottom:10px; line-height:1.6; border-radius:4px; }
-        .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:8px 0; box-sizing:border-box; font-size: 16px; border-radius:0; outline:none; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
-        .btn-sub { background:#222; color:var(--gold); font-size:11px; padding:12px; }
-        .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; align-items:center; }
-        #logo-box { width:50px; height:50px; border:1px solid var(--gold); margin-right:12px; background-size:cover; background-position:center; background-color:#111; }
-        #status-hud { color: var(--warn); font-size: 11px; text-transform: uppercase; margin-bottom: 5px; }
-        a { color: #666; font-size: 11px; text-decoration: none; cursor: pointer; display: block; margin: 10px 0; text-align: center; }
+        body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:monospace; min-height:100vh; }
+        .app-shell { padding:20px; text-align:center; }
+        .btn { width:100%; max-width:300px; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; margin-bottom:10px; }
+        .ritual-input { width:100%; max-width:280px; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:8px 0; }
+        .display { height:300px; background:#000; border:1px solid #222; overflow-y:auto; text-align:left; padding:10px; color:#fff; font-size:12px; }
+        #arena-view { display:none; }
     </style>
+    <script>
+        const SCRIPT = "https://script.google.com/macros/s/AKfycbxEvs82TDhwUKmamlHRSctyhXqup3AGq9C_JuG_QdGWv__kc6nnJOPrJ9mn97Y1jiG6/exec";
+        let USER = null;
+
+        function showCredsInput() {
+            document.getElementById('gate-container').innerHTML = `
+                <h3>INITIALIZE SESSION</h3>
+                <input type="text" id="u-in" class="ritual-input" placeholder="USERNAME">
+                <input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD">
+                <button class="btn" onclick="login()">CONNECT</button>
+            `;
+        }
+
+        function login() {
+            const u = document.getElementById('u-in').value;
+            const p = document.getElementById('p-in').value;
+            // FIXED: Using "no-cors" fallback logic
+            fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if(data.status === "AUTHORIZED") {
+                        USER = data;
+                        document.getElementById('auth-view').style.display = 'none';
+                        document.getElementById('arena-view').style.display = 'block';
+                        document.getElementById('disp-name').innerText = USER.name;
+                        startSync();
+                    } else { alert("DENIED"); }
+                });
+        }
+
+        function startSync() {
+            setInterval(() => {
+                fetch(`${SCRIPT}?get_gist=true&key=${USER.key}`)
+                .then(r => r.json())
+                .then(g => {
+                    const c = g.chat || [];
+                    document.getElementById('chat-box').innerHTML = c.map(m => `<div>${m.user}: ${m.text}</div>`).join('');
+                });
+            }, 5000);
+        }
+
+        function sendChat() {
+            const msg = document.getElementById('chat-in').value;
+            fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => {
+                document.getElementById('chat-in').value = '';
+            });
+        }
+    </script>
 </head>
 <body>
-
-<div class="app-shell">
-    <div id="auth-view" style="max-width:400px; margin:auto; text-align:center;">
-        <h2 style="letter-spacing:5px;">RITUAL ENGINE</h2>
-        <div id="status-hud"></div>
-        <div id="gate-container">
-            <button class="btn" onclick="showKeyInput()">CLAIM ACCESS NODE</button>
-            <button class="btn btn-sub" onclick="showCredsInput()">INITIALIZE SESSION</button>
-        </div>
-        <div id="dynamic-inputs" style="display:none; margin-top:20px;"></div>
-    </div>
-
-    <div id="arena-view" style="display:none;">
-        <div class="header">
-            <div style="display:flex; align-items:center;">
-                <div id="logo-box"></div>
-                <div><h2 id="disp-name" style="margin:0; font-size:18px;"></h2><small id="disp-game" style="color:#666;"></small></div>
-            </div>
-            <div id="role-tag" style="border:1px solid var(--gold); padding:2px 6px; font-size:10px;"></div>
-        </div>
-        <div class="grid">
-            <div class="pane"><small>🏆 ALLIANCE RECORDS</small><div id="hof-box" class="display">Syncing...</div><div id="admin-tools"></div></div>
-            <div class="pane">
-                <small>🔥 ARENA CHAT</small>
-                <div id="chat-box" class="display">Connecting...</div>
-                <input type="text" id="chat-in" class="ritual-input" placeholder="Transmission..." onkeydown="if(event.key==='Enter') sendChat()">
-                <button class="btn" id="send-btn" onclick="sendChat()">EXECUTE</button>
+    <div class="app-shell">
+        <div id="auth-view">
+            <h2>RITUAL ENGINE</h2>
+            <div id="gate-container">
+                <button class="btn" onclick="showCredsInput()">INITIALIZE SESSION</button>
             </div>
         </div>
-        <button class="btn btn-sub" style="margin-top:20px; opacity:0.3;" onclick="logout()">DISCONNECT NODE</button>
+
+        <div id="arena-view">
+            <h2 id="disp-name"></h2>
+            <div id="chat-box" class="display">Connecting...</div>
+            <input type="text" id="chat-in" class="ritual-input" placeholder="Message...">
+            <button class="btn" onclick="sendChat()">SEND</button>
+        </div>
     </div>
-</div>
-
-<script>
-    // --- STATIC CONFIG ---
-    var SCRIPT = "https://script.google.com/macros/s/AKfycbwhbT6YsyquWCmiT07oXGp1MfaZws9bq5xX-QrC8V9rBKSOQKqGXuKmwOLcVkly4-oo/exec";
-    var USER = null;
-
-    function showCredsInput() { 
-        document.getElementById("gate-container").style.display = "none"; 
-        var div = document.getElementById("dynamic-inputs");
-        div.style.display = "block"; 
-        div.innerHTML = "<h3>INITIALIZE</h3><input type='text' id='u-in' class='ritual-input' placeholder='USERNAME' autocapitalize='none'><input type='password' id='p-in' class='ritual-input' placeholder='PASSWORD'><button class='btn' onclick='loginWithCreds()'>CONNECT</button><a onclick='location.reload()'>BACK</a>"; 
-    }
-
-    function showKeyInput() { 
-        document.getElementById("gate-container").style.display = "none"; 
-        var div = document.getElementById("dynamic-inputs");
-        div.style.display = "block"; 
-        div.innerHTML = "<h3>VERIFY NODE</h3><input type='text' id='k-in' class='ritual-input' placeholder='RITUAL-XXXX' style='text-transform:uppercase;'><button class='btn' onclick='validateKey()'>VERIFY</button><a onclick='location.reload()'>BACK</a>"; 
-    }
-
-    function loginWithCreds() {
-        var u = document.getElementById("u-in").value.trim().toLowerCase(); 
-        var p = document.getElementById("p-in").value.trim(); 
-        var hud = document.getElementById("status-hud");
-        if(!u || !p) return;
-        hud.innerText = "LINKING...";
-        fetch(SCRIPT + "?user=" + encodeURIComponent(u) + "&pass=" + encodeURIComponent(p))
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if(data.status === "AUTHORIZED") {
-                    USER = data;
-                    localStorage.setItem("ritual_user", JSON.stringify(data));
-                    sessionStorage.setItem("active_session", "true");
-                    launchArena();
-                } else { hud.innerText = "DENIED: " + data.status; }
-            }).catch(function(e) { hud.innerText = "SYNC STALLED"; });
-    }
-
-    function validateKey() {
-        var k = document.getElementById("k-in").value.trim().toUpperCase();
-        if(!k) return;
-        fetch(SCRIPT + "?key=" + k).then(function(r) { return r.json(); }).then(function(data) {
-            if(data.status === "AUTHORIZED") {
-                USER = data;
-                localStorage.setItem("ritual_user", JSON.stringify(data));
-                sessionStorage.setItem("active_session", "true");
-                launchArena();
-            }
-        });
-    }
-
-    function launchArena() {
-        document.getElementById("auth-view").style.display = "none";
-        document.getElementById("arena-view").style.display = "block";
-        document.getElementById("disp-name").innerText = USER.name;
-        document.getElementById("disp-game").innerText = "PROTOCOL: " + USER.game;
-        document.getElementById("role-tag").innerText = USER.role;
-        var logo = document.getElementById("logo-box");
-        if(USER.logo && USER.logo.indexOf("http") !== -1) logo.style.backgroundImage = "url('" + USER.logo + "')";
-        
-        var tools = document.getElementById("admin-tools");
-        tools.innerHTML = "<button class='btn btn-sub' onclick='copyInvite(\"MEMBER\")'>INVITE MEMBER</button>";
-        if(USER.role === "OWNER") tools.innerHTML += "<button class='btn btn-sub' onclick='copyInvite(\"OFFICER\")'>INVITE OFFICER</button>";
-        
-        loadSync(); 
-        setInterval(loadSync, 8000); 
-    }
-
-    function loadSync() {
-        if(!USER) return;
-        fetch(SCRIPT + "?get_gist=true&key=" + USER.key)
-            .then(function(r) { return r.json(); })
-            .then(function(g) {
-                var h = g.history || [];
-                document.getElementById("hof-box").innerHTML = h.slice().reverse().map(function(i) { return "<div>[" + i.date + "] " + i.name + "</div>"; }).join("") || "No Records.";
-                var c = g.chat || [];
-                document.getElementById("chat-box").innerHTML = c.map(function(m) { return "<div><span style='color:var(--gold)'>" + m.user + ":</span> " + m.text + "</div>"; }).join("") || "Welcome.";
-                document.getElementById("chat-box").scrollTop = document.getElementById("chat-box").scrollHeight;
-            }).catch(function(e) { console.log("Sync..."); });
-    }
-
-    function sendChat() {
-        var input = document.getElementById("chat-in"); var msg = input.value.trim();
-        if (!msg || !USER) return;
-        fetch(SCRIPT + "?key=" + USER.key + "&chat_msg=" + encodeURIComponent(msg)).then(function() { 
-            input.value = ""; 
-            loadSync(); 
-        });
-    }
-
-    function copyInvite(role) { 
-        var link = window.location.origin + window.location.pathname + "?invite=" + role;
-        navigator.clipboard.writeText(link); alert("COPIED!");
-    }
-
-    function logout() { localStorage.clear(); sessionStorage.clear(); location.reload(); }
-
-    window.onload = function() {
-        var saved = localStorage.getItem("ritual_user");
-        if(saved && sessionStorage.getItem("active_session")) {
-            USER = JSON.parse(saved);
-            launchArena();
-        }
-    };
-</script>
 </body>
 </html>
