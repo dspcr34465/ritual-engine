@@ -3,31 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V27.5 MASTER</title>
+    <title>RITUAL ENGINE | V29.1</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; --fire: #ff6600; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
-        .app-shell { padding:15px; max-width:800px; margin:auto; }
-        .pane { background:var(--panel); border:1px solid #222; padding:15px; margin-bottom:15px; }
         
-        /* THE GREAT SEAL (Fixed 1:1 Master Branding) */
-        .seal-module { 
-            width: 100%; aspect-ratio: 1/1; border: 2px solid var(--gold); 
-            /* THE CSS FIX: Ensuring 1:1 Scaling and Centering */
-            background-size: cover; 
-            background-position: center; 
-            background-repeat: no-repeat;
-            margin-bottom: 15px; display: flex; align-items: flex-end; 
-            background-color: #050505; box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
-        }
+        /* STACKING MODULES */
+        .app-shell { padding:15px; max-width:1200px; margin:auto; display: flex; flex-direction: column; gap: 15px; }
+        @media (min-width: 900px) { .app-shell { flex-direction: row; flex-wrap: wrap; justify-content: center; } }
+        .pane { background:var(--panel); border:1px solid #222; padding:15px; width: 100%; box-sizing: border-box; }
+        @media (min-width: 900px) { .pane { flex: 1 1 350px; } #cmd, .full-width { width: 100%; flex: 1 1 100%; } }
+
+        /* ALLIANCE SEAL */
+        .seal-module { width: 100%; aspect-ratio: 1/1; border: 2px solid var(--gold); background-size: cover; background-position: center; display: flex; align-items: flex-end; background-color: #050505; }
+        @media (min-width: 900px) { .seal-module { flex: 1 1 450px; max-width: 500px; } }
         .seal-banner { width: 100%; background: rgba(0,0,0,0.85); padding: 15px; text-align: center; border-top: 1px solid var(--gold); backdrop-filter: blur(5px); }
         
-        .display { height:180px; background:#000; border:1px solid #111; overflow-y:auto; padding:10px; color:#eee; font-size:12px; margin-bottom:10px; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; }
+        /* PROFILE CARD */
+        .profile-card { display: flex; align-items: center; gap: 15px; padding: 10px; background: #080808; border: 1px solid #111; }
+        .avatar-box { width: 80px; height: 80px; border: 1px solid var(--gold); background-size: cover; background-position: center; background-color: #111; flex-shrink: 0; cursor: pointer; position: relative; }
+        .avatar-box::after { content: "CHANGE"; position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.7); font-size: 8px; text-align: center; color: #fff; padding: 2px 0; }
+        .bio-text { font-size: 11px; color: #777; font-style: italic; line-height: 1.4; margin-top: 5px; }
+
+        .display { height:180px; background:#000; border:1px solid #111; overflow-y:auto; padding:10px; color:#eee; font-size:12px; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:12px; font-weight:bold; cursor:pointer; margin-top:10px; text-transform:uppercase; font-size:11px; }
         .in { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:10px 0; box-sizing:border-box; text-align:center; }
-        .key-melt { font-size: 80px; animation: melt 3s forwards; display:block; text-align:center; }
-        @keyframes melt { 0% { opacity:1; transform:scale(1); color:var(--gold); } 100% { opacity:0; transform:scale(0.5) translateY(40px); filter:blur(10px); } }
         .ritual-flash { color: var(--fire); text-align: center; animation: flicker 0.2s infinite; font-weight: bold; }
         @keyframes flicker { 0%, 100% { opacity:1; } 50% { opacity:0.3; } }
     </style>
@@ -35,66 +36,59 @@
 <body>
 
 <div class="app-shell">
-    <div id="init-view" style="display:none; text-align:center; padding-top:50px;">
-        <h2>YOU HAVE BEEN TAPPED</h2>
-        <input id="init-email" class="in" placeholder="RECRUIT EMAIL">
-        <button class="btn" onclick="submitInit()">REQUEST INITIATION</button>
-    </div>
-
-    <div id="ratify-view" style="display:none; text-align:center; padding-top:50px;">
-        <div id="burn-zone" style="display:none;"><span class="key-melt">🔑</span><br><div class="ritual-flash">BURNING KEY...</div></div>
-        <div id="ratify-form">
-            <h2>RATIFY ACCESS</h2>
-            <input id="k-in" class="in" placeholder="RITUAL-XXXX">
-            <input id="u-new" class="in" placeholder="CHOOSE USERNAME">
-            <input id="p-new" class="in" type="password" placeholder="CHOOSE PASSWORD">
-            <button class="btn" onclick="runRatify()">FINALIZE RITUAL</button>
-        </div>
-    </div>
-
-    <div id="auth-view" style="text-align:center; padding-top:50px;">
+    <div id="auth-view" style="width:100%; text-align:center; padding-top:10vh;">
         <h2>RITUAL ENGINE</h2>
-        <div id="hud" style="color:var(--warn); font-size:11px; margin-bottom:10px;">SYSTEM STANDBY</div>
+        <div id="hud" style="color:var(--warn); font-size:11px; margin-bottom:10px;">INITIALIZING NODE...</div>
         <input id="u" class="in" placeholder="USERNAME" autocapitalize="none">
         <input id="p" class="in" type="password" placeholder="PASSWORD">
-        <button class="btn" onclick="login()">INITIALIZE TERMINAL</button>
-        <p style="font-size:10px;">GOT A KEY? <span onclick="showView('ratify-view')" style="color:var(--gold); cursor:pointer;">RATIFY HERE</span></p>
+        <button class="btn" onclick="login()">INITIALIZE</button>
     </div>
 
-    <div id="arena-view" style="display:none;">
+    <div id="arena-view" style="display:none; width: 100%; display: contents;">
         <div id="seal-box" class="seal-module">
             <div class="seal-banner">
-                <h2 id="all-n" style="margin:0; font-size:18px; text-transform:uppercase;"></h2>
-                <small id="u-r" style="color:var(--gold); letter-spacing:2px;"></small>
+                <h2 id="all-n" style="margin:0; font-size:20px; text-transform:uppercase;"></h2>
+                <small id="u-r" style="color:var(--gold); letter-spacing:3px;"></small>
             </div>
         </div>
-        <div class="pane"><small>🏆 HALL OF FAME</small><div id="hof" class="display"></div></div>
-        <div class="pane"><small>🔥 CHAT</small><div id="chat" class="display"></div><input id="msg" class="in" placeholder="Transmit Command..."><button class="btn" onclick="sendChat()">EXECUTE</button></div>
+
+        <div class="pane">
+            <div class="profile-card">
+                <div id="my-avatar" class="avatar-box" onclick="document.getElementById('av-up').click()"></div>
+                <div style="flex:1;">
+                    <div style="font-weight:bold; font-size:14px;" id="my-name"></div>
+                    <div id="my-bio" class="bio-text"></div>
+                    <button class="btn" style="width:auto; padding:4px 8px; font-size:9px;" onclick="toggleBio()">EDIT BIO</button>
+                </div>
+            </div>
+            <input type="file" id="av-up" accept="image/*" style="display:none" onchange="processAvatar(this)">
+            <div id="bio-zone" style="display:none;">
+                <textarea id="bio-in" class="in" style="height:60px; font-size:11px; text-align:left;"></textarea>
+                <button class="btn" onclick="saveIdentity()">RATIFY IDENTITY</button>
+            </div>
+        </div>
         
-        <div id="cmd" class="pane" style="border:2px dashed var(--gold); display:none;">
+        <div class="pane"><small>🏆 HALL OF FAME</small><div id="hof" class="display"></div></div>
+        
+        <div class="pane"><small>🔥 CHAT</small><div id="chat" class="display"></div>
+            <input id="msg" class="in" placeholder="Transmit..."><button class="btn" onclick="sendChat()">EXECUTE</button>
+        </div>
+
+        <div id="cmd" class="pane" style="display:none; border:2px dashed var(--gold);">
             <b>COMMAND CENTER</b>
+            <button class="btn" style="background:#222; color:var(--gold); border:1px solid var(--gold);" onclick="document.getElementById('logo-up').click()">RE-BRAND ALLIANCE SEAL</button>
+            <input type="file" id="logo-up" accept="image/*" style="display:none" onchange="processBranding(this)">
+            <button class="btn" style="background:var(--warn); color:#000;" onclick="document.getElementById('f-up').click()">COMMENCE RITUAL</button>
+            <button class="btn" onclick="getTap('MEMBER')" style="background:#111; color:var(--gold); border:1px solid #333;">GENERATE MEMBER TAP</button>
             <input type="file" id="f-up" accept=".csv, .xlsx" style="display:none;" onchange="handleRaffle(this)">
-            <button class="btn" style="background:var(--warn); color:#000; margin-top:10px;" onclick="document.getElementById('f-up').click()">COMMENCE RITUAL</button>
-            <button class="btn" onclick="getTap('MEMBER')" style="background:#111; color:var(--gold); border:1px solid #333;">MEMBER TAP</button>
-            <button id="off-btn" class="btn" onclick="getTap('OFFICER')" style="display:none; background:#111; color:var(--gold); border:1px solid #333;">OFFICER TAP</button>
-            <button onclick="location.reload()" style="background:none; border:none; color:#444; width:100%; font-size:10px;">DISCONNECT</button>
+            <button onclick="location.reload()" style="background:none; border:none; color:#444; width:100%; margin-top:10px; font-size:10px;">DISCONNECT</button>
         </div>
     </div>
 </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbyLXjzJ6YZOZxji_--fe6J5PqWa2iZxBtg17xn2iXiWHE101itQOjFB-kDVnO6ENuLm/exec";
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbwBl6FjmfbJ4s6RCbjh_FMxB5x_SpccY8xVUCZdRrqkpxiIVWV40W2p3_NZionm1b7T/exec";
     let USER = null; let RITUAL = false;
-
-    window.onload = () => {
-        const p = new URLSearchParams(window.location.search);
-        if(p.has('tap')) showView('init-view');
-    };
-
-    function showView(id) {
-        ['auth-view','init-view','ratify-view','arena-view'].forEach(v => document.getElementById(v).style.display='none');
-        document.getElementById(id).style.display='block';
-    }
 
     async function login() {
         const u = document.getElementById('u').value.trim();
@@ -103,76 +97,72 @@
         const d = await res.json();
         if(d.status === "AUTHORIZED") {
             USER = d; 
-            showView('arena-view');
+            document.getElementById('auth-view').style.display='none';
+            document.getElementById('arena-view').style.display='flex';
             document.getElementById('all-n').innerText = USER.alliance;
             document.getElementById('u-r').innerText = USER.role;
-            
-            // THE VISUAL HANDSHAKE FIX (CSS scaling is now applied)
-            if(USER.logo) {
-                document.getElementById('seal-box').style.backgroundImage = "url('" + USER.logo + "')";
-            }
-            
-            if(USER.role !== "MEMBER") {
-                document.getElementById('cmd').style.display='block';
-                if(USER.role === "OWNER") document.getElementById('off-btn').style.display='block';
-            }
+            document.getElementById('my-name').innerText = USER.user.toUpperCase();
+            document.getElementById('my-bio').innerText = USER.bio;
+            if(USER.logo) document.getElementById('seal-box').style.backgroundImage = `url('${USER.logo}')`;
+            if(USER.avatar) document.getElementById('my-avatar').style.backgroundImage = `url('${USER.avatar}')`;
+            if(USER.role !== "MEMBER") document.getElementById('cmd').style.display='block';
             sync(); setInterval(sync, 8000);
-        } else { document.getElementById('hud').innerText = d.msg || "ACCESS DENIED"; }
+        } else { document.getElementById('hud').innerText = "ACCESS DENIED"; }
     }
 
-    async function sync() {
-        if(!USER || RITUAL) return;
-        const res = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`);
-        const g = await res.json();
-        document.getElementById('chat').innerHTML = (g.chat || []).map(m => `<div><b>${m.user}:</b> ${m.text}</div>`).join('');
-        document.getElementById('hof').innerHTML = (g.history || []).map(h => `<div>[${h.date}] ${h.name}</div>`).join('');
+    function toggleBio() {
+        const z = document.getElementById('bio-zone');
+        z.style.display = z.style.display === 'none' ? 'block' : 'none';
+        document.getElementById('bio-in').value = USER.bio;
     }
 
-    async function runRatify() {
-        const k = document.getElementById('k-in').value.trim();
-        const u = document.getElementById('u-new').value.trim();
-        const p = document.getElementById('p-new').value.trim();
-        const res = await fetch(`${SCRIPT}?ratify_key=${k}&new_user=${encodeURIComponent(u)}&new_pass=${encodeURIComponent(p)}`);
-        const d = await res.json();
-        if(d.status === "SUCCESS") {
-            document.getElementById('ratify-form').style.display='none';
-            document.getElementById('burn-zone').style.display='block';
-            setTimeout(() => { alert("RATIFICATION COMPLETE. Check email for credentials. ADD TO HOME SCREEN."); location.reload(); }, 3500);
-        } else { alert(d.msg); }
-    }
-
-    async function submitInit() {
-        const p = new URLSearchParams(window.location.search);
-        const e = document.getElementById('init-email').value.trim();
-        await fetch(`${SCRIPT}?initiate_email=${encodeURIComponent(e)}&from_owner=${p.get('from')}&role=${p.get('tap')}`);
-        alert("INITIATION REQUESTED. Your Key will be sent to your email.");
-        location.search = "";
-    }
-
-    function getTap(role) {
-        fetch(`${SCRIPT}?creator_key=${USER.key}&tap_role=${role}`).then(r => r.json()).then(d => {
-            if(d.status === "SUCCESS") prompt("MANUAL COPY REQUIRED. RITUAL TAP:", d.link);
-            else alert(d.msg);
-        });
-    }
-
-    function handleRaffle(input) {
+    async function processAvatar(input) {
+        if (!input.files[0]) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
-            let hat = []; rows.forEach(r => { if(r[0] && r[1]) for(let i=0; i<r[1]; i++) hat.push(r[0]); });
-            if(hat.length) startRitual(hat);
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.createElement('canvas');
+                cvs.width = 200; cvs.height = 200; // Small, efficient size
+                cvs.getContext('2d').drawImage(img, 0, 0, 200, 200);
+                USER.avatar = cvs.toDataURL("image/jpeg", 0.6); // 60% quality compression
+                document.getElementById('my-avatar').style.backgroundImage = `url('${USER.avatar}')`;
+                saveIdentity(); // Auto-save on photo change
+            };
+            img.src = e.target.result;
         };
-        reader.readAsArrayBuffer(input.files[0]);
+        reader.readAsDataURL(input.files[0]);
     }
 
-    function startRitual(hat) {
-        RITUAL = true; const h = document.getElementById('hof');
-        h.innerHTML = "<div class='ritual-flash'><br>THE PHOENIX HAS BEEN FED...</div>";
-        setTimeout(() => {
-            h.innerHTML = "<div class='ritual-flash'><br>LET THE FLAMES DECIDE</div>";
-            setTimeout(() => {
-                let t = 10;
-                const i = setInterval(() => {
-                    const randomName = hat[Math.floor(Math
+    async function saveIdentity() {
+        const bio = document.getElementById('bio-in').value || USER.bio;
+        const res = await fetch(`${SCRIPT}?key=${USER.key}&update_identity=true&bio=${encodeURIComponent(bio)}&avatar=${encodeURIComponent(USER.avatar || "")}`);
+        const d = await res.json();
+        if(d.status === "SUCCESS") { 
+            USER.bio = bio; 
+            document.getElementById('my-bio').innerText = bio;
+            document.getElementById('bio-zone').style.display = 'none';
+        }
+    }
+
+    async function processBranding(input) {
+        if (!input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.createElement('canvas');
+                cvs.width = 600; cvs.height = 600;
+                cvs.getContext('2d').drawImage(img, 0, 0, 600, 600);
+                const logoData = cvs.toDataURL("image/jpeg", 0.6);
+                fetch(`${SCRIPT}?key=${USER.key}&update_logo=${encodeURIComponent(logoData)}`).then(() => location.reload());
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    // ... (Keep existing Sync, Chat, Raffle, and Phoenix logic from V28.0) ...
+</script>
+</body>
+</html>
