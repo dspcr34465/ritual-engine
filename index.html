@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V15.9 COMMAND NODE</title>
+    <title>RITUAL ENGINE | V16.9.2 REPAIRED</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; -webkit-text-size-adjust: 100%; }
@@ -60,17 +60,16 @@
 </div>
 
 <script>
+    // UPDATE THIS URL TO YOUR LATEST /EXEC LINK
     const SCRIPT = "https://script.google.com/macros/s/AKfycbzdNtI96JfcMiVZqGmPIgun3M6lgUC2DnuK0B8m4a-ZEE3e35QC2Ag7BnEQMmiiTekR/exec";
     
-    // FORCE RELOAD LOGIC: Clears session on browser close
     let USER = JSON.parse(localStorage.getItem('ritual_user'));
 
     window.onload = () => {
-        // Only auto-load if a session flag exists for THIS window session
         if(USER && sessionStorage.getItem('active_session')) { 
             launchArena(); 
         } else {
-            logout(); // Clean slate if no active session
+            logout();
         }
         const p = new URLSearchParams(window.location.search);
         if(p.has('invite')) showEnrollmentScreen(p.get('invite'));
@@ -80,7 +79,7 @@
         document.getElementById('gate-container').style.display='none'; 
         const div = document.getElementById('dynamic-inputs');
         div.style.display='block'; 
-        div.innerHTML = `<h3>VERIFY KEY</h3><input type="text" id="k-in" class="ritual-input" placeholder="ACCESS KEY"><button class="btn" id="v-btn" onclick="validateKey()">VERIFY</button><p><a onclick="location.reload()">BACK</a></p>`; 
+        div.innerHTML = `<h3>VERIFY KEY</h3><input type="text" id="k-in" class="ritual-input" placeholder="ACCESS KEY"><button class="btn" onclick="validateKey()">VERIFY</button><p><a onclick="location.reload()">BACK</a></p>`; 
     }
 
     function showCredsInput() { 
@@ -89,9 +88,9 @@
         div.style.display='block'; 
         div.innerHTML = `
             <h3>LOGIN</h3>
-            <form id="l-form" onsubmit="event.preventDefault(); loginWithCreds();">
-                <input type="text" id="u-in" name="username" class="ritual-input" placeholder="USERNAME" autocapitalize="none" spellcheck="false" autocomplete="username">
-                <input type="password" id="p-in" name="password" class="ritual-input" placeholder="PASSWORD" autocomplete="current-password">
+            <form onsubmit="event.preventDefault(); loginWithCreds();">
+                <input type="text" id="u-in" class="ritual-input" placeholder="USERNAME" autocapitalize="none" spellcheck="false">
+                <input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD">
                 <button type="submit" class="btn" id="c-btn">CONNECT</button>
             </form>
             <a onclick="recoverAccount()">FORGOT CREDENTIALS?</a>
@@ -100,23 +99,29 @@
     }
 
     function loginWithCreds() {
-        // AGGRESSIVE SANITIZATION FOR MOBILE
         const u = document.getElementById('u-in').value.trim().toLowerCase(); 
         const p = document.getElementById('p-in').value.trim(); 
+        const btn = document.getElementById('c-btn'); 
         if(!u || !p) return;
-
-        const btn = document.getElementById('c-btn'); btn.innerText = "VERIFYING...";
-        fetch(`${SCRIPT}?user=${u}&pass=${p}`).then(r => r.json()).then(data => {
-            if(data.status === "INVALID_CREDENTIALS") { 
-                btn.innerText = "ACCESS DENIED"; 
-                setTimeout(() => { btn.innerText = "CONNECT"; }, 2000);
-                return; 
-            }
-            USER = data;
-            localStorage.setItem('ritual_user', JSON.stringify(data));
-            sessionStorage.setItem('active_session', 'true');
-            launchArena();
-        }).catch(err => { btn.innerText = "RETRY"; console.error(err); });
+        
+        btn.innerText = "WAITING FOR GOOGLE...";
+        fetch(`${SCRIPT}?user=${u}&pass=${p}`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.status === "AUTHORIZED") {
+                    USER = data;
+                    localStorage.setItem('ritual_user', JSON.stringify(data));
+                    sessionStorage.setItem('active_session', 'true');
+                    launchArena();
+                } else {
+                    alert("ACCESS DENIED: " + (data.status || "Unknown Error"));
+                    btn.innerText = "CONNECT";
+                }
+            })
+            .catch(err => {
+                alert("NETWORK ERROR: Check your Web App URL.");
+                btn.innerText = "RETRY";
+            });
     }
 
     function launchArena() {
@@ -126,11 +131,12 @@
         document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game || 'LAST WAR'}`;
         document.getElementById('role-tag').innerText = USER.role;
         if(USER.logo) document.getElementById('logo-box').style.backgroundImage = `url('${USER.logo}')`;
-        loadGist(); setInterval(loadGist, 6000); 
+        loadGist(); 
+        setInterval(loadGist, 7000); 
         const tools = document.getElementById('admin-tools');
-        tools.innerHTML = `<button class="btn btn-sub" id="inv-mem" onclick="copyInvite('MEMBER')">INVITE MEMBER</button>`;
-        if(USER.role === "OWNER") tools.innerHTML += `<button class="btn btn-sub" id="inv-off" onclick="copyInvite('OFFICER')">INVITE OFFICER</button>`;
-        if(USER.role === "OWNER" || USER.role === "OFFICER") tools.innerHTML += `<button class="btn btn-warn" id="rit-start" onclick="startRitual()">START RITUAL</button>`;
+        tools.innerHTML = `<button class="btn btn-sub" onclick="copyInvite('MEMBER')">INVITE MEMBER</button>`;
+        if(USER.role === "OWNER") tools.innerHTML += `<button class="btn btn-sub" onclick="copyInvite('OFFICER')">INVITE OFFICER</button>`;
+        if(USER.role === "OWNER" || USER.role === "OFFICER") tools.innerHTML += `<button class="btn btn-warn" onclick="startRitual()">START RITUAL</button>`;
     }
 
     function logout() { 
@@ -147,63 +153,103 @@
         fetch(`https://api.github.com/gists/${USER.gistId}?nocache=${Date.now()}`)
             .then(r => r.json())
             .then(g => {
-                // Safeguard against missing files
                 if (!g.files || !g.files[USER.gistFile]) return;
-                
                 const content = JSON.parse(g.files[USER.gistFile].content);
-                
-                // --- CRASH PROOFING FOR HALL OF FAME ---
-                // We check if history exists AND is an array before trying to reverse it
                 const h = content.history || [];
-                const hofBox = document.getElementById('hof-box');
-                
-                if (Array.isArray(h) && h.length > 0) {
-                    hofBox.innerHTML = h.slice().reverse().map(i => `
-                        <div><span style="color:var(--gold)">[${i.date}]</span> <b>${i.name}</b></div>
-                    `).join('');
-                } else {
-                    hofBox.innerHTML = "<div style='opacity:0.3'>No Records Found.</div>";
-                }
-                
-                // --- CHAT RENDER ---
+                document.getElementById('hof-box').innerHTML = (h.length > 0) ? h.slice().reverse().map(i => `<div>[${i.date}] ${i.name}</div>`).join('') : "No Records.";
                 const chats = content.chat || [];
-                document.getElementById('chat-box').innerHTML = chats.map(m => `
-                    <div><span style="color:var(--gold)">${m.user}:</span> ${m.text}</div>
-                `).join('') || "Connecting...";
-                
-                const chatDisplay = document.getElementById('chat-box');
-                chatDisplay.scrollTop = chatDisplay.scrollHeight;
+                document.getElementById('chat-box').innerHTML = chats.map(m => `<div><span style="color:var(--gold)">${m.user}:</span> ${m.text}</div>`).join('') || "Welcome.";
+                document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
             })
-            .catch(err => console.log("Gist sync delayed..."));
-    }
+            .catch(e => console.log("Gist sync delayed..."));
     }
 
     function sendChat() {
-        const input = document.getElementById('chat-in'); const msg = input.value.trim(); const btn = document.getElementById('send-btn');
-        if (!msg || !USER) return; btn.innerText = "..."; input.disabled = true;
-        fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => { input.value = ''; input.disabled = false; btn.innerText = "EXECUTE"; loadGist(); });
+        const input = document.getElementById('chat-in'); 
+        const msg = input.value.trim(); 
+        if (!msg || !USER) return;
+        fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => { 
+            input.value = ''; 
+            loadGist(); 
+        });
     }
 
-    function recoverAccount() {
-        const email = prompt("ENTER REGISTERED EMAIL:");
-        if(email) fetch(`${SCRIPT}?recover=${encodeURIComponent(email)}`).then(r => r.text()).then(res => alert(res === "SENT" ? "RECOVERY SENT." : "NOT FOUND."));
-    }
-    
     function startRitual() {
-        document.getElementById('phoenix-layer').style.display='flex'; let c=10; 
-        let t=setInterval(() => { c--; document.getElementById('countdown').innerText=c; if(c<=0){ clearInterval(t); document.getElementById('phoenix-layer').style.display='none'; const w=prompt("WINNER:"); if(w) fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => loadGist()); }}, 1000);
+        document.getElementById('phoenix-layer').style.display='flex'; 
+        let c=10; 
+        let t=setInterval(() => { 
+            c--; 
+            document.getElementById('countdown').innerText=c; 
+            if(c<=0){ 
+                clearInterval(t); 
+                document.getElementById('phoenix-layer').style.display='none'; 
+                const w=prompt("WINNER:"); 
+                if(w) fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => loadGist()); 
+            }
+        }, 1000);
     }
     
     function copyInvite(role) { 
         const link = `${window.location.origin}${window.location.pathname}?invite=${role}`;
         navigator.clipboard.writeText(link);
-        const btn = role === "MEMBER" ? document.getElementById('inv-mem') : document.getElementById('inv-off');
-        const oldTxt = btn.innerText; btn.innerText = "COPIED!"; setTimeout(() => btn.innerText = oldTxt, 2000);
+        alert("INVITE LINK COPIED.");
     }
 
-    function showEnrollmentScreen(role) { document.getElementById('gate-container').style.display='none'; const div = document.getElementById('dynamic-inputs'); div.style.display='block'; div.innerHTML = `<h3>ENROLLMENT</h3><p style="font-size:10px;">ROLE: ${role}</p><input type="email" id="e-in" class="ritual-input" placeholder="EMAIL"><button class="btn" onclick="triggerEmail('${role}')">REQUEST KEY</button>`; }
-    function triggerEmail(role) { const e = document.getElementById('e-in').value; if(!e) return; fetch(`${SCRIPT}?enroll_email=${encodeURIComponent(e)}&invite_role=${role}`).then(() => { alert("KEY SENT."); location.href = location.origin + location.pathname; }); }
-    function validateKey() { const k = document.getElementById('k-in').value; fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => { USER = data; if(data.status === "STEP_BRANDING") showBrandingForm(); else if(data.status === "STEP_ACCOUNT") showAccountForm(data.role); else { localStorage.setItem('ritual_user', JSON.stringify(data)); sessionStorage.setItem('active_session', 'true'); launchArena(); } }); }
+    function validateKey() { 
+        const k = document.getElementById('k-in').value; 
+        fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => { 
+            USER = data; 
+            if(data.status === "STEP_BRANDING") showBrandingForm(); 
+            else if(data.status === "STEP_ACCOUNT") showAccountForm(data.role); 
+            else { 
+                localStorage.setItem('ritual_user', JSON.stringify(data)); 
+                sessionStorage.setItem('active_session', 'true'); 
+                launchArena(); 
+            } 
+        }); 
+    }
+    
+    function recoverAccount() {
+        const email = prompt("ENTER REGISTERED EMAIL:");
+        if(email) fetch(`${SCRIPT}?recover=${encodeURIComponent(email)}`).then(r => r.text()).then(res => alert(res === "SENT" ? "RECOVERY DISPATCHED." : "NOT FOUND."));
+    }
+
+    function showBrandingForm() { 
+        document.getElementById('dynamic-inputs').innerHTML = `<h3>BRANDING</h3><input type="text" id="b-name" class="ritual-input" placeholder="ALLIANCE NAME"><input type="text" id="b-game" class="ritual-input" placeholder="GAME"><input type="text" id="b-logo" class="ritual-input" placeholder="LOGO URL"><button class="btn" onclick="saveBranding()">LOCK BRANDING</button>`; 
+    }
+
+    function saveBranding() { 
+        const n = encodeURIComponent(document.getElementById('b-name').value);
+        const g = encodeURIComponent(document.getElementById('b-game').value);
+        const l = encodeURIComponent(document.getElementById('b-logo').value);
+        fetch(`${SCRIPT}?key=${USER.key}&name=${n}&game=${g}&logo=${l}`).then(() => validateKey()); 
+    }
+
+    function showAccountForm(role) { 
+        document.getElementById('dynamic-inputs').innerHTML = `<h3>CREATE ACCOUNT</h3><p>ROLE: ${role}</p><input type="text" id="u-reg" class="ritual-input" placeholder="USERNAME"><input type="password" id="p-reg" class="ritual-input" placeholder="PASSWORD"><button class="btn" onclick="saveAccount()">FINALIZE</button>`; 
+    }
+
+    function saveAccount() { 
+        const u = document.getElementById('u-reg').value.toLowerCase(); 
+        const p = document.getElementById('p-reg').value; 
+        fetch(`${SCRIPT}?key=${USER.key}&username=${u}&password=${p}`).then(() => validateKey()); 
+    }
+
+    function showEnrollmentScreen(role) { 
+        document.getElementById('gate-container').style.display='none'; 
+        const div = document.getElementById('dynamic-inputs'); 
+        div.style.display='block'; 
+        div.innerHTML = `<h3>ENROLLMENT</h3><p>ROLE: ${role}</p><input type="email" id="e-in" class="ritual-input" placeholder="EMAIL"><button class="btn" onclick="triggerEmail('${role}')">REQUEST KEY</button>`; 
+    }
+
+    function triggerEmail(role) { 
+        const e = document.getElementById('e-in').value; 
+        if(!e) return; 
+        fetch(`${SCRIPT}?enroll_email=${encodeURIComponent(e)}&invite_role=${role}`).then(() => { 
+            alert("KEY DISPATCHED TO EMAIL."); 
+            location.href = location.origin + location.pathname; 
+        }); 
+    }
 </script>
 </body>
 </html>
