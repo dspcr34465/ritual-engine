@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V17.8 SECURE</title>
+    <title>RITUAL ENGINE | V18.2 SECURE</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
@@ -126,7 +126,6 @@
 
     function loadSync() {
         if(!USER) return;
-        // The portal now asks Google to fetch the Gist data so the token stays hidden
         fetch(`${SCRIPT}?get_gist=true&key=${USER.key}`)
             .then(r => r.json())
             .then(g => {
