@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V17.3 FIXED</title>
+    <title>RITUAL ENGINE | V17.4 HUD</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
@@ -17,18 +17,16 @@
         .btn-sub { background:#222; color:var(--gold); font-size:11px; padding:12px; }
         .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; align-items:center; }
         #logo-box { width:50px; height:50px; border:1px solid var(--gold); margin-right:12px; background-size:cover; background-position:center; background-color:#111; }
+        #status-hud { color: var(--warn); font-size: 12px; margin: 10px 0; min-height: 15px; text-transform: uppercase; font-weight: bold; }
         a { color: #666; font-size: 11px; text-decoration: none; cursor: pointer; display: block; margin: 10px 0; text-align: center; }
-        #phoenix-layer { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
-        .aura { width:150px; height:150px; border:2px solid var(--warn); box-shadow:0 0 50px var(--warn); border-radius:50%; background:radial-gradient(circle, #ff4444 0%, #000 70%); }
     </style>
 </head>
 <body>
 
-<div id="phoenix-layer"><div class="aura"></div><h1 style="color:var(--warn);">RITUAL ACTIVE</h1><div id="countdown" style="font-size:40px; color:#fff;">10</div></div>
-
 <div class="app-shell">
     <div id="auth-view" style="max-width:400px; margin:auto; text-align:center;">
         <h2 style="letter-spacing:5px;">RITUAL ENGINE</h2>
+        <div id="status-hud"></div>
         <div id="gate-container">
             <button class="btn" onclick="showKeyInput()">CLAIM ACCESS NODE</button>
             <button class="btn btn-sub" onclick="showCredsInput()">INITIALIZE SESSION</button>
@@ -58,9 +56,10 @@
 </div>
 
 <script>
-    // --- CORE CONFIG ---
     const SCRIPT = "https://script.google.com/macros/s/AKfycbzdNtI96JfcMiVZqGmPIgun3M6lgUC2DnuK0B8m4a-ZEE3e35QC2Ag7BnEQMmiiTekR/exec";
     let USER = null;
+
+    function logStatus(msg) { document.getElementById('status-hud').innerText = msg; }
 
     window.onload = () => {
         const saved = localStorage.getItem('ritual_user');
@@ -93,10 +92,9 @@
     function loginWithCreds() {
         const u = document.getElementById('u-in').value.trim().toLowerCase(); 
         const p = document.getElementById('p-in').value.trim(); 
-        const btn = document.getElementById('c-btn');
-        if(!u || !p) return alert("ENTER CREDENTIALS");
+        if(!u || !p) return logStatus("ENTER CREDENTIALS");
         
-        btn.innerText = "WAIT...";
+        logStatus("LINKING...");
         fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`)
             .then(res => res.json())
             .then(data => {
@@ -104,25 +102,25 @@
                     USER = data;
                     localStorage.setItem('ritual_user', JSON.stringify(data));
                     sessionStorage.setItem('active_session', 'true');
+                    logStatus("");
                     launchArena();
-                } else {
-                    alert("DENIED: " + data.status);
-                    btn.innerText = "CONNECT";
-                }
-            }).catch(() => { alert("CONNECTION ERROR"); btn.innerText = "CONNECT"; });
+                } else { logStatus("DENIED: " + data.status); }
+            }).catch(() => logStatus("CONNECTION ERROR"));
     }
 
     function validateKey() {
         const k = document.getElementById('k-in').value.trim().toUpperCase();
         if(!k) return;
+        logStatus("VERIFYING...");
         fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => {
             if(data.status === "AUTHORIZED" || data.status === "COMPLETE") {
                 USER = data;
                 localStorage.setItem('ritual_user', JSON.stringify(data));
                 sessionStorage.setItem('active_session', 'true');
+                logStatus("");
                 launchArena();
-            } else { alert("INVALID KEY"); }
-        });
+            } else { logStatus("INVALID KEY"); }
+        }).catch(() => logStatus("SYNC FAILED"));
     }
 
     function launchArena() {
