@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V16.9.2 REPAIRED</title>
+    <title>RITUAL ENGINE | V17.0 TITAN</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
-        body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; -webkit-text-size-adjust: 100%; }
+        body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
         .app-shell { display:flex; flex-direction:column; padding:15px; box-sizing:border-box; }
         .grid { display:flex; flex-direction:column; gap:15px; } 
         @media (min-width: 900px) { .grid { flex-direction:row; height: 80vh; } }
         .pane { flex:1; background:var(--panel); border:1px solid #222; padding:15px; display:flex; flex-direction:column; min-height:350px; }
         .display { flex:1; background:#000; border:1px solid #111; padding:12px; overflow-y:auto; color:#fff; font-size:13px; margin-bottom:10px; line-height:1.6; }
-        .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:8px 0; outline:none; box-sizing:border-box; font-size: 16px; border-radius: 0; -webkit-appearance: none; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; letter-spacing:2px; margin-bottom:10px; text-transform:uppercase; transition: 0.2s; border-radius: 0; }
+        .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:8px 0; box-sizing:border-box; font-size: 16px; border-radius:0; outline:none; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
         .btn-sub { background:#222; color:var(--gold); font-size:11px; padding:12px; }
         .btn-warn { background:var(--warn); color:#000; }
         .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; align-items:center; }
         #logo-box { width:50px; height:50px; border:1px solid var(--gold); margin-right:12px; background-size:cover; background-position:center; background-color:#111; }
-        a { color: #666; font-size: 11px; text-decoration: none; cursor: pointer; display: block; margin: 10px 0; text-align: center; }
         #phoenix-layer { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
-        .phoenix-aura { width:200px; height:200px; border:2px solid var(--warn); box-shadow:0 0 40px var(--warn); border-radius:50%; animation:pulse 1s infinite alternate; background:url('https://files.oaiusercontent.com/file-m0PIn3C9mS6e8o4T2zH7Z0?se=2026-03-23T21%3A55%3A00Z&sp=r&sv=2024-08-04&sr=b&rscc=max-age%3D604800%2C%20immutable%2C%20private&rscd=attachment%3B%20filename%3Dmecha_phoenix.png&sig=S9R/uL/7tZ7bU5j4W4N5M5k7J8L9M0N1P2Q3R4S5T6U%3D') no-repeat center; background-size:contain; }
+        .phoenix-aura { width:200px; height:200px; border:2px solid var(--warn); box-shadow:0 0 40px var(--warn); border-radius:50%; animation:pulse 1s infinite alternate; background-color: #222; }
         @keyframes pulse { from { opacity:0.4; transform:scale(0.9); } to { opacity:1; transform:scale(1.1); } }
+        a { color: #666; font-size: 11px; text-decoration: none; cursor: pointer; display: block; margin: 10px 0; text-align: center; }
     </style>
 </head>
 <body>
@@ -60,17 +60,14 @@
 </div>
 
 <script>
-    // UPDATE THIS URL TO YOUR LATEST /EXEC LINK
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbzdNtI96JfcMiVZqGmPIgun3M6lgUC2DnuK0B8m4a-ZEE3e35QC2Ag7BnEQMmiiTekR/exec";
+    // LINK TO YOUR GOOGLE SCRIPT BACKEND
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbw-p_FY0dfR35o-eGPlYW3KBScTqpf0JaUdIwIP1yG_D3vRmVca39zUeSS9MryfCVC2/exec";
     
     let USER = JSON.parse(localStorage.getItem('ritual_user'));
 
     window.onload = () => {
-        if(USER && sessionStorage.getItem('active_session')) { 
-            launchArena(); 
-        } else {
-            logout();
-        }
+        if(USER && sessionStorage.getItem('active_session')) { launchArena(); } 
+        else { logout(); }
         const p = new URLSearchParams(window.location.search);
         if(p.has('invite')) showEnrollmentScreen(p.get('invite'));
     };
@@ -79,49 +76,38 @@
         document.getElementById('gate-container').style.display='none'; 
         const div = document.getElementById('dynamic-inputs');
         div.style.display='block'; 
-        div.innerHTML = `<h3>VERIFY KEY</h3><input type="text" id="k-in" class="ritual-input" placeholder="ACCESS KEY"><button class="btn" onclick="validateKey()">VERIFY</button><p><a onclick="location.reload()">BACK</a></p>`; 
+        div.innerHTML = `<h3>VERIFY ACCESS</h3><input type="text" id="k-in" class="ritual-input" placeholder="RITUAL-XXXX" style="text-transform:uppercase;"><button class="btn" id="v-btn" onclick="validateKey()">VERIFY NODE</button><a onclick="location.reload()">BACK</a>`; 
     }
 
     function showCredsInput() { 
         document.getElementById('gate-container').style.display='none'; 
         const div = document.getElementById('dynamic-inputs');
         div.style.display='block'; 
-        div.innerHTML = `
-            <h3>LOGIN</h3>
-            <form onsubmit="event.preventDefault(); loginWithCreds();">
-                <input type="text" id="u-in" class="ritual-input" placeholder="USERNAME" autocapitalize="none" spellcheck="false">
-                <input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD">
-                <button type="submit" class="btn" id="c-btn">CONNECT</button>
-            </form>
-            <a onclick="recoverAccount()">FORGOT CREDENTIALS?</a>
-            <a onclick="location.reload()">BACK</a>
-        `; 
+        div.innerHTML = `<h3>LOGIN</h3><form onsubmit="event.preventDefault(); loginWithCreds();"><input type="text" id="u-in" class="ritual-input" placeholder="USERNAME" autocapitalize="none"><input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD"><button type="submit" class="btn" id="c-btn">CONNECT</button></form><a onclick="location.reload()">BACK</a>`; 
+    }
+
+    function validateKey() {
+        const k = document.getElementById('k-in').value.trim().toUpperCase();
+        if(!k) return;
+        document.getElementById('v-btn').innerText = "LINKING...";
+        fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => {
+            if(data.status === "AUTHORIZED" || data.status === "COMPLETE") {
+                USER = data;
+                localStorage.setItem('ritual_user', JSON.stringify(data));
+                sessionStorage.setItem('active_session', 'true');
+                launchArena();
+            } else { alert("ERROR: " + data.status); document.getElementById('v-btn').innerText = "VERIFY NODE"; }
+        }).catch(err => { alert("CONNECTION FAILED"); document.getElementById('v-btn').innerText = "VERIFY NODE"; });
     }
 
     function loginWithCreds() {
         const u = document.getElementById('u-in').value.trim().toLowerCase(); 
         const p = document.getElementById('p-in').value.trim(); 
-        const btn = document.getElementById('c-btn'); 
-        if(!u || !p) return;
-        
-        btn.innerText = "WAITING FOR GOOGLE...";
-        fetch(`${SCRIPT}?user=${u}&pass=${p}`)
-            .then(r => r.json())
-            .then(data => {
-                if(data.status === "AUTHORIZED") {
-                    USER = data;
-                    localStorage.setItem('ritual_user', JSON.stringify(data));
-                    sessionStorage.setItem('active_session', 'true');
-                    launchArena();
-                } else {
-                    alert("ACCESS DENIED: " + (data.status || "Unknown Error"));
-                    btn.innerText = "CONNECT";
-                }
-            })
-            .catch(err => {
-                alert("NETWORK ERROR: Check your Web App URL.");
-                btn.innerText = "RETRY";
-            });
+        const btn = document.getElementById('c-btn'); btn.innerText = "WAIT...";
+        fetch(`${SCRIPT}?user=${u}&pass=${p}`).then(r => r.json()).then(data => {
+            if(data.status === "AUTHORIZED") { USER = data; localStorage.setItem('ritual_user', JSON.stringify(data)); sessionStorage.setItem('active_session', 'true'); launchArena(); }
+            else { alert("INVALID CREDENTIALS"); btn.innerText = "CONNECT"; }
+        });
     }
 
     function launchArena() {
@@ -131,125 +117,52 @@
         document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game || 'LAST WAR'}`;
         document.getElementById('role-tag').innerText = USER.role;
         if(USER.logo) document.getElementById('logo-box').style.backgroundImage = `url('${USER.logo}')`;
-        loadGist(); 
-        setInterval(loadGist, 7000); 
+        loadGist(); setInterval(loadGist, 8000); 
         const tools = document.getElementById('admin-tools');
         tools.innerHTML = `<button class="btn btn-sub" onclick="copyInvite('MEMBER')">INVITE MEMBER</button>`;
         if(USER.role === "OWNER") tools.innerHTML += `<button class="btn btn-sub" onclick="copyInvite('OFFICER')">INVITE OFFICER</button>`;
         if(USER.role === "OWNER" || USER.role === "OFFICER") tools.innerHTML += `<button class="btn btn-warn" onclick="startRitual()">START RITUAL</button>`;
     }
 
-    function logout() { 
-        localStorage.removeItem('ritual_user'); 
-        sessionStorage.removeItem('active_session'); 
-        document.getElementById('auth-view').style.display = 'block';
-        document.getElementById('arena-view').style.display = 'none';
-        document.getElementById('gate-container').style.display = 'block';
-        document.getElementById('dynamic-inputs').style.display = 'none';
-    }
-
     function loadGist() {
         if(!USER || !USER.gistId) return;
-        fetch(`https://api.github.com/gists/${USER.gistId}?nocache=${Date.now()}`)
-            .then(r => r.json())
-            .then(g => {
-                if (!g.files || !g.files[USER.gistFile]) return;
-                const content = JSON.parse(g.files[USER.gistFile].content);
-                const h = content.history || [];
-                document.getElementById('hof-box').innerHTML = (h.length > 0) ? h.slice().reverse().map(i => `<div>[${i.date}] ${i.name}</div>`).join('') : "No Records.";
-                const chats = content.chat || [];
-                document.getElementById('chat-box').innerHTML = chats.map(m => `<div><span style="color:var(--gold)">${m.user}:</span> ${m.text}</div>`).join('') || "Welcome.";
-                document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-            })
-            .catch(e => console.log("Gist sync delayed..."));
-    }
-
-    function sendChat() {
-        const input = document.getElementById('chat-in'); 
-        const msg = input.value.trim(); 
-        if (!msg || !USER) return;
-        fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => { 
-            input.value = ''; 
-            loadGist(); 
+        fetch(`https://api.github.com/gists/${USER.gistId}?nocache=${Date.now()}`).then(r => r.json()).then(g => {
+            const content = JSON.parse(g.files[USER.gistFile].content);
+            const h = content.history || [];
+            document.getElementById('hof-box').innerHTML = (h.length > 0) ? h.slice().reverse().map(i => `<div>[${i.date}] ${i.name}</div>`).join('') : "No Records.";
+            const c = content.chat || [];
+            document.getElementById('chat-box').innerHTML = c.map(m => `<div><span style="color:var(--gold)">${m.user}:</span> ${m.text}</div>`).join('') || "Welcome.";
+            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
         });
     }
 
-    function startRitual() {
-        document.getElementById('phoenix-layer').style.display='flex'; 
-        let c=10; 
-        let t=setInterval(() => { 
-            c--; 
-            document.getElementById('countdown').innerText=c; 
-            if(c<=0){ 
-                clearInterval(t); 
-                document.getElementById('phoenix-layer').style.display='none'; 
-                const w=prompt("WINNER:"); 
-                if(w) fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => loadGist()); 
-            }
-        }, 1000);
+    function sendChat() {
+        const input = document.getElementById('chat-in'); const msg = input.value.trim();
+        if (!msg || !USER) return;
+        fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => { input.value = ''; loadGist(); });
     }
-    
+
+    function startRitual() {
+        document.getElementById('phoenix-layer').style.display='flex'; let c=10; 
+        let t=setInterval(() => { c--; document.getElementById('countdown').innerText=c; if(c<=0){ clearInterval(t); document.getElementById('phoenix-layer').style.display='none'; const w=prompt("WINNER:"); if(w) fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => loadGist()); }}, 1000);
+    }
+
     function copyInvite(role) { 
         const link = `${window.location.origin}${window.location.pathname}?invite=${role}`;
-        navigator.clipboard.writeText(link);
-        alert("INVITE LINK COPIED.");
-    }
-
-    function validateKey() { 
-        const k = document.getElementById('k-in').value; 
-        fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => { 
-            USER = data; 
-            if(data.status === "STEP_BRANDING") showBrandingForm(); 
-            else if(data.status === "STEP_ACCOUNT") showAccountForm(data.role); 
-            else { 
-                localStorage.setItem('ritual_user', JSON.stringify(data)); 
-                sessionStorage.setItem('active_session', 'true'); 
-                launchArena(); 
-            } 
-        }); 
-    }
-    
-    function recoverAccount() {
-        const email = prompt("ENTER REGISTERED EMAIL:");
-        if(email) fetch(`${SCRIPT}?recover=${encodeURIComponent(email)}`).then(r => r.text()).then(res => alert(res === "SENT" ? "RECOVERY DISPATCHED." : "NOT FOUND."));
-    }
-
-    function showBrandingForm() { 
-        document.getElementById('dynamic-inputs').innerHTML = `<h3>BRANDING</h3><input type="text" id="b-name" class="ritual-input" placeholder="ALLIANCE NAME"><input type="text" id="b-game" class="ritual-input" placeholder="GAME"><input type="text" id="b-logo" class="ritual-input" placeholder="LOGO URL"><button class="btn" onclick="saveBranding()">LOCK BRANDING</button>`; 
-    }
-
-    function saveBranding() { 
-        const n = encodeURIComponent(document.getElementById('b-name').value);
-        const g = encodeURIComponent(document.getElementById('b-game').value);
-        const l = encodeURIComponent(document.getElementById('b-logo').value);
-        fetch(`${SCRIPT}?key=${USER.key}&name=${n}&game=${g}&logo=${l}`).then(() => validateKey()); 
-    }
-
-    function showAccountForm(role) { 
-        document.getElementById('dynamic-inputs').innerHTML = `<h3>CREATE ACCOUNT</h3><p>ROLE: ${role}</p><input type="text" id="u-reg" class="ritual-input" placeholder="USERNAME"><input type="password" id="p-reg" class="ritual-input" placeholder="PASSWORD"><button class="btn" onclick="saveAccount()">FINALIZE</button>`; 
-    }
-
-    function saveAccount() { 
-        const u = document.getElementById('u-reg').value.toLowerCase(); 
-        const p = document.getElementById('p-reg').value; 
-        fetch(`${SCRIPT}?key=${USER.key}&username=${u}&password=${p}`).then(() => validateKey()); 
-    }
-
-    function showEnrollmentScreen(role) { 
-        document.getElementById('gate-container').style.display='none'; 
-        const div = document.getElementById('dynamic-inputs'); 
-        div.style.display='block'; 
-        div.innerHTML = `<h3>ENROLLMENT</h3><p>ROLE: ${role}</p><input type="email" id="e-in" class="ritual-input" placeholder="EMAIL"><button class="btn" onclick="triggerEmail('${role}')">REQUEST KEY</button>`; 
+        navigator.clipboard.writeText(link); alert("COPIED!");
     }
 
     function triggerEmail(role) { 
-        const e = document.getElementById('e-in').value; 
-        if(!e) return; 
-        fetch(`${SCRIPT}?enroll_email=${encodeURIComponent(e)}&invite_role=${role}`).then(() => { 
-            alert("KEY DISPATCHED TO EMAIL."); 
-            location.href = location.origin + location.pathname; 
-        }); 
+        const e = document.getElementById('e-in').value; if(!e) return; 
+        fetch(`${SCRIPT}?enroll_email=${encodeURIComponent(e)}&invite_role=${role}`).then(() => { alert("KEY DISPATCHED."); location.href = location.origin + location.pathname; }); 
     }
+
+    function showEnrollmentScreen(role) { 
+        document.getElementById('gate-container').style.display='none'; const div = document.getElementById('dynamic-inputs'); div.style.display='block'; 
+        div.innerHTML = `<h3>ENROLLMENT</h3><input type="email" id="e-in" class="ritual-input" placeholder="EMAIL"><button class="btn" onclick="triggerEmail('${role}')">REQUEST KEY</button>`; 
+    }
+
+    function logout() { localStorage.clear(); sessionStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
