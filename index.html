@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V18.2 SECURE</title>
+    <title>RITUAL ENGINE | V18.3 CLEAN</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
@@ -11,7 +11,7 @@
         .grid { display:flex; flex-direction:column; gap:15px; } 
         @media (min-width: 900px) { .grid { flex-direction:row; height: 75vh; } }
         .pane { flex:1; background:var(--panel); border:1px solid #222; padding:15px; display:flex; flex-direction:column; min-height:350px; }
-        .display { flex:1; background:#000; border:1px solid #111; padding:12px; overflow-y:auto; color:#fff; font-size:13px; margin-bottom:10px; line-height:1.6; }
+        .display { flex:1; background:#000; border:1px solid #111; padding:12px; overflow-y:auto; color:#fff; font-size:13px; margin-bottom:10px; line-height:1.6; border-radius:4px; }
         .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:8px 0; box-sizing:border-box; font-size: 16px; border-radius:0; outline:none; }
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
         .btn-sub { background:#222; color:var(--gold); font-size:11px; padding:12px; }
@@ -22,7 +22,6 @@
     </style>
 </head>
 <body>
-
 <div class="app-shell">
     <div id="auth-view" style="max-width:400px; margin:auto; text-align:center;">
         <h2 style="letter-spacing:5px;">RITUAL ENGINE</h2>
@@ -33,7 +32,6 @@
         </div>
         <div id="dynamic-inputs" style="display:none; margin-top:20px;"></div>
     </div>
-
     <div id="arena-view" style="display:none;">
         <div class="header">
             <div style="display:flex; align-items:center;">
@@ -93,7 +91,7 @@
                     sessionStorage.setItem('active_session', 'true');
                     launchArena();
                 } else { document.getElementById('status-hud').innerText = "DENIED: " + data.status; }
-            });
+            }).catch(e => { document.getElementById('status-hud').innerText = "LINK FAILED"; });
     }
 
     function validateKey() {
@@ -115,11 +113,9 @@
         document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game}`;
         document.getElementById('role-tag').innerText = USER.role;
         if(USER.logo && USER.logo.includes('http')) document.getElementById('logo-box').style.backgroundImage = `url('${USER.logo}')`;
-        
         const tools = document.getElementById('admin-tools');
         tools.innerHTML = `<button class="btn btn-sub" onclick="copyInvite('MEMBER')">INVITE MEMBER</button>`;
         if(USER.role === "OWNER") tools.innerHTML += `<button class="btn btn-sub" onclick="copyInvite('OFFICER')">INVITE OFFICER</button>`;
-        
         loadSync(); 
         setInterval(loadSync, 8000); 
     }
@@ -134,7 +130,7 @@
                 const c = g.chat || [];
                 document.getElementById('chat-box').innerHTML = c.map(m => `<div><span style="color:var(--gold)">${m.user}:</span> ${m.text}</div>`).join('') || "Welcome.";
                 document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-            });
+            }).catch(e => { console.log("Sync delay..."); });
     }
 
     function sendChat() {
