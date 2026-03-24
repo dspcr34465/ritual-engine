@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V17.1 TITAN</title>
+    <title>RITUAL ENGINE | V17.2 TITAN</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
@@ -13,21 +13,14 @@
         .pane { flex:1; background:var(--panel); border:1px solid #222; padding:15px; display:flex; flex-direction:column; min-height:350px; }
         .display { flex:1; background:#000; border:1px solid #111; padding:12px; overflow-y:auto; color:#fff; font-size:13px; margin-bottom:10px; line-height:1.6; }
         .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:8px 0; box-sizing:border-box; font-size: 16px; border-radius:0; outline:none; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; transition: 0.2s; }
-        .btn:active { opacity: 0.5; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
         .btn-sub { background:#222; color:var(--gold); font-size:11px; padding:12px; }
-        .btn-warn { background:var(--warn); color:#000; }
         .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; align-items:center; }
         #logo-box { width:50px; height:50px; border:1px solid var(--gold); margin-right:12px; background-size:cover; background-position:center; background-color:#111; }
-        #phoenix-layer { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
-        .phoenix-aura { width:150px; height:150px; border:2px solid var(--warn); box-shadow:0 0 50px var(--warn); border-radius:50%; animation:pulse 1s infinite alternate; background: radial-gradient(circle, #ff4444 0%, #000 70%); }
-        @keyframes pulse { from { opacity:0.4; transform:scale(0.9); } to { opacity:1; transform:scale(1.1); } }
         a { color: #666; font-size: 11px; text-decoration: none; cursor: pointer; display: block; margin: 10px 0; text-align: center; }
     </style>
 </head>
 <body>
-
-<div id="phoenix-layer"><div class="phoenix-aura"></div><h1 style="color:var(--warn);">RITUAL ACTIVE</h1><div id="countdown" style="font-size:40px;">10</div></div>
 
 <div class="app-shell">
     <div id="auth-view" style="max-width:400px; margin:auto; text-align:center;">
@@ -61,55 +54,57 @@
 </div>
 
 <script>
-    // LIVE SCRIPT ENDPOINT
     const SCRIPT = "https://script.google.com/macros/s/AKfycbzdNtI96JfcMiVZqGmPIgun3M6lgUC2DnuK0B8m4a-ZEE3e35QC2Ag7BnEQMmiiTekR/exec";
-    
     let USER = JSON.parse(localStorage.getItem('ritual_user'));
 
     window.onload = () => {
         if(USER && sessionStorage.getItem('active_session')) { launchArena(); } 
         else { logout(); }
-        const p = new URLSearchParams(window.location.search);
-        if(p.has('invite')) showEnrollmentScreen(p.get('invite'));
     };
-
-    function showKeyInput() { 
-        document.getElementById('gate-container').style.display='none'; 
-        const div = document.getElementById('dynamic-inputs');
-        div.style.display='block'; 
-        div.innerHTML = `<h3>VERIFY ACCESS</h3><input type="text" id="k-in" class="ritual-input" placeholder="RITUAL-XXXX" style="text-transform:uppercase;"><button class="btn" id="v-btn" onclick="validateKey()">VERIFY NODE</button><a onclick="location.reload()">BACK</a>`; 
-    }
 
     function showCredsInput() { 
         document.getElementById('gate-container').style.display='none'; 
         const div = document.getElementById('dynamic-inputs');
         div.style.display='block'; 
-        div.innerHTML = `<h3>LOGIN</h3><form onsubmit="event.preventDefault(); loginWithCreds();"><input type="text" id="u-in" class="ritual-input" placeholder="USERNAME" autocapitalize="none"><input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD"><button type="submit" class="btn" id="c-btn">CONNECT</button></form><a onclick="location.reload()">BACK</a>`; 
-    }
-
-    function validateKey() {
-        const k = document.getElementById('k-in').value.trim().toUpperCase();
-        if(!k) return alert("ENTER KEY");
-        const btn = document.getElementById('v-btn');
-        btn.innerText = "LINKING...";
-        fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => {
-            if(data.status === "AUTHORIZED" || data.status === "COMPLETE") {
-                USER = data;
-                localStorage.setItem('ritual_user', JSON.stringify(data));
-                sessionStorage.setItem('active_session', 'true');
-                launchArena();
-            } else { alert("ERROR: " + data.status); btn.innerText = "VERIFY NODE"; }
-        }).catch(err => { alert("STALL: Check URL or Internet"); btn.innerText = "VERIFY NODE"; });
+        div.innerHTML = `
+            <h3>INITIALIZE</h3>
+            <form onsubmit="event.preventDefault(); loginWithCreds();">
+                <input type="text" id="u-in" class="ritual-input" placeholder="USERNAME" autocapitalize="none">
+                <input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD">
+                <button type="submit" class="btn" id="c-btn">CONNECT</button>
+            </form>
+            <a onclick="location.reload()">BACK</a>
+        `; 
     }
 
     function loginWithCreds() {
         const u = document.getElementById('u-in').value.trim().toLowerCase(); 
         const p = document.getElementById('p-in').value.trim(); 
-        const btn = document.getElementById('c-btn'); btn.innerText = "WAIT...";
-        fetch(`${SCRIPT}?user=${u}&pass=${p}`).then(r => r.json()).then(data => {
-            if(data.status === "AUTHORIZED") { USER = data; localStorage.setItem('ritual_user', JSON.stringify(data)); sessionStorage.setItem('active_session', 'true'); launchArena(); }
-            else { alert("INVALID CREDENTIALS"); btn.innerText = "CONNECT"; }
-        });
+        const btn = document.getElementById('c-btn');
+        if(!u || !p) return;
+        
+        btn.innerText = "LINKING...";
+        // Adding callback for JSONP style cross-domain bypass
+        const url = `${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`;
+        
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "AUTHORIZED") {
+                    USER = data;
+                    localStorage.setItem('ritual_user', JSON.stringify(data));
+                    sessionStorage.setItem('active_session', 'true');
+                    launchArena();
+                } else {
+                    alert("DENIED: " + (data.status || "Check Credentials"));
+                    btn.innerText = "CONNECT";
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("STALL: Cloud Sync Busy. Retry in 5s.");
+                btn.innerText = "CONNECT";
+            });
     }
 
     function launchArena() {
@@ -117,16 +112,47 @@
         document.getElementById('arena-view').style.display = 'block';
         document.getElementById('disp-name').innerText = USER.name || "THE COLONY";
         document.getElementById('disp-game').innerText = `PROTOCOL: ${USER.game || 'LAST WAR'}`;
-        document.getElementById('role-tag').innerText = USER.role;
-        const logo = document.getElementById('logo-box');
-        if(USER.logo && USER.logo.includes('http')) logo.style.backgroundImage = `url('${USER.logo}')`;
-        loadGist(); setInterval(loadGist, 8000); 
-        const tools = document.getElementById('admin-tools');
-        tools.innerHTML = `<button class="btn btn-sub" onclick="copyInvite('MEMBER')">INVITE MEMBER</button>`;
-        if(USER.role === "OWNER") tools.innerHTML += `<button class="btn btn-sub" onclick="copyInvite('OFFICER')">INVITE OFFICER</button>`;
-        if(USER.role === "OWNER" || USER.role === "OFFICER") tools.innerHTML += `<button class="btn btn-warn" onclick="startRitual()">START RITUAL</button>`;
+        document.getElementById('role-tag').innerText = USER.role || 'MEMBER';
+        if(USER.logo) document.getElementById('logo-box').style.backgroundImage = `url('${USER.logo}')`;
+        loadGist(); 
+        setInterval(loadGist, 8000); 
     }
 
     function loadGist() {
         if(!USER || !USER.gistId) return;
-        fetch(`
+        fetch(`https://api.github.com/gists/${USER.gistId}?nocache=${Date.now()}`)
+            .then(r => r.json())
+            .then(g => {
+                if(!g.files || !g.files[USER.gistFile]) return;
+                const content = JSON.parse(g.files[USER.gistFile].content);
+                const h = content.history || [];
+                document.getElementById('hof-box').innerHTML = (h.length > 0) ? h.slice().reverse().map(i => `<div>[${i.date}] ${i.name}</div>`).join('') : "No Records.";
+                const c = content.chat || [];
+                document.getElementById('chat-box').innerHTML = c.map(m => `<div>${m.user}: ${m.text}</div>`).join('') || "Welcome.";
+            });
+    }
+
+    function sendChat() {
+        const input = document.getElementById('chat-in'); const msg = input.value.trim();
+        if (!msg || !USER) return;
+        fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => { input.value = ''; loadGist(); });
+    }
+
+    function logout() { localStorage.clear(); sessionStorage.clear(); location.reload(); }
+    function showKeyInput() { 
+        document.getElementById('gate-container').style.display='none'; 
+        const div = document.getElementById('dynamic-inputs');
+        div.style.display='block'; 
+        div.innerHTML = `<h3>VERIFY NODE</h3><input type="text" id="k-in" class="ritual-input" placeholder="RITUAL-XXXX" style="text-transform:uppercase;"><button class="btn" onclick="validateKey()">VERIFY</button><a onclick="location.reload()">BACK</a>`; 
+    }
+    function validateKey() {
+        const k = document.getElementById('k-in').value.trim().toUpperCase();
+        fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => {
+            if(data.status === "AUTHORIZED" || data.status === "COMPLETE") {
+                USER = data; localStorage.setItem('ritual_user', JSON.stringify(data)); sessionStorage.setItem('active_session', 'true'); launchArena();
+            } else { alert("INVALID KEY"); }
+        });
+    }
+</script>
+</body>
+</html>
