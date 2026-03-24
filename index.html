@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V17.4 HUD</title>
+    <title>RITUAL ENGINE | V17.5 ADMIN</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
         .app-shell { display:flex; flex-direction:column; padding:15px; box-sizing:border-box; }
         .grid { display:flex; flex-direction:column; gap:15px; } 
-        @media (min-width: 900px) { .grid { flex-direction:row; height: 80vh; } }
+        @media (min-width: 900px) { .grid { flex-direction:row; height: 75vh; } }
         .pane { flex:1; background:var(--panel); border:1px solid #222; padding:15px; display:flex; flex-direction:column; min-height:350px; }
         .display { flex:1; background:#000; border:1px solid #111; padding:12px; overflow-y:auto; color:#fff; font-size:13px; margin-bottom:10px; line-height:1.6; }
         .ritual-input { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:8px 0; box-sizing:border-box; font-size: 16px; border-radius:0; outline:none; }
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
         .btn-sub { background:#222; color:var(--gold); font-size:11px; padding:12px; }
+        .btn-warn { background:var(--warn); color:#000; }
         .header { display:flex; justify-content:space-between; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; align-items:center; }
         #logo-box { width:50px; height:50px; border:1px solid var(--gold); margin-right:12px; background-size:cover; background-position:center; background-color:#111; }
-        #status-hud { color: var(--warn); font-size: 12px; margin: 10px 0; min-height: 15px; text-transform: uppercase; font-weight: bold; }
+        #status-hud { color: var(--warn); font-size: 12px; margin: 10px 0; min-height: 15px; text-transform: uppercase; }
+        #phoenix-layer { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; }
+        .aura { width:150px; height:150px; border:2px solid var(--warn); box-shadow:0 0 50px var(--warn); border-radius:50%; background:radial-gradient(circle, #ff4444 0%, #000 70%); animation:pulse 1s infinite alternate; }
+        @keyframes pulse { from { opacity:0.4; transform:scale(0.9); } to { opacity:1; transform:scale(1.1); } }
         a { color: #666; font-size: 11px; text-decoration: none; cursor: pointer; display: block; margin: 10px 0; text-align: center; }
     </style>
 </head>
 <body>
+
+<div id="phoenix-layer"><div class="aura"></div><h1 style="color:var(--warn);">RITUAL ACTIVE</h1><div id="countdown" style="font-size:40px; color:#fff;">10</div></div>
 
 <div class="app-shell">
     <div id="auth-view" style="max-width:400px; margin:auto; text-align:center;">
@@ -43,7 +49,11 @@
             <div id="role-tag" style="border:1px solid var(--gold); padding:2px 6px; font-size:10px;"></div>
         </div>
         <div class="grid">
-            <div class="pane"><small>🏆 ALLIANCE RECORDS</small><div id="hof-box" class="display">Syncing...</div><div id="admin-tools"></div></div>
+            <div class="pane">
+                <small>🏆 ALLIANCE RECORDS</small>
+                <div id="hof-box" class="display">Syncing...</div>
+                <div id="admin-tools"></div>
+            </div>
             <div class="pane">
                 <small>🔥 ARENA CHAT</small>
                 <div id="chat-box" class="display">Connecting...</div>
@@ -73,27 +83,20 @@
         document.getElementById('gate-container').style.display='none'; 
         const div = document.getElementById('dynamic-inputs');
         div.style.display='block'; 
-        div.innerHTML = `
-            <h3>INITIALIZE</h3>
-            <input type="text" id="u-in" class="ritual-input" placeholder="USERNAME" autocapitalize="none">
-            <input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD">
-            <button class="btn" id="c-btn" onclick="loginWithCreds()">CONNECT</button>
-            <a onclick="location.reload()">BACK</a>
-        `; 
+        div.innerHTML = `<h3>INITIALIZE</h3><input type="text" id="u-in" class="ritual-input" placeholder="USERNAME" autocapitalize="none"><input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD"><button class="btn" id="c-btn" onclick="loginWithCreds()">CONNECT</button><a onclick="location.reload()">BACK</a>`; 
     }
 
     function showKeyInput() { 
         document.getElementById('gate-container').style.display='none'; 
         const div = document.getElementById('dynamic-inputs');
         div.style.display='block'; 
-        div.innerHTML = `<h3>VERIFY NODE</h3><input type="text" id="k-in" class="ritual-input" placeholder="RITUAL-XXXX" style="text-transform:uppercase;"><button class="btn" id="v-btn" onclick="validateKey()">VERIFY</button><a onclick="location.reload()">BACK</a>`; 
+        div.innerHTML = `<h3>VERIFY NODE</h3><input type="text" id="k-in" class="ritual-input" placeholder="RITUAL-XXXX" style="text-transform:uppercase;"><button class="btn" onclick="validateKey()">VERIFY</button><a onclick="location.reload()">BACK</a>`; 
     }
 
     function loginWithCreds() {
         const u = document.getElementById('u-in').value.trim().toLowerCase(); 
         const p = document.getElementById('p-in').value.trim(); 
         if(!u || !p) return logStatus("ENTER CREDENTIALS");
-        
         logStatus("LINKING...");
         fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`)
             .then(res => res.json())
@@ -102,7 +105,6 @@
                     USER = data;
                     localStorage.setItem('ritual_user', JSON.stringify(data));
                     sessionStorage.setItem('active_session', 'true');
-                    logStatus("");
                     launchArena();
                 } else { logStatus("DENIED: " + data.status); }
             }).catch(() => logStatus("CONNECTION ERROR"));
@@ -111,16 +113,14 @@
     function validateKey() {
         const k = document.getElementById('k-in').value.trim().toUpperCase();
         if(!k) return;
-        logStatus("VERIFYING...");
         fetch(`${SCRIPT}?key=${k}`).then(r => r.json()).then(data => {
-            if(data.status === "AUTHORIZED" || data.status === "COMPLETE") {
+            if(data.status === "AUTHORIZED") {
                 USER = data;
                 localStorage.setItem('ritual_user', JSON.stringify(data));
                 sessionStorage.setItem('active_session', 'true');
-                logStatus("");
                 launchArena();
-            } else { logStatus("INVALID KEY"); }
-        }).catch(() => logStatus("SYNC FAILED"));
+            }
+        });
     }
 
     function launchArena() {
@@ -132,6 +132,17 @@
         if(USER.logo && USER.logo.includes('http')) {
             document.getElementById('logo-box').style.backgroundImage = `url('${USER.logo}')`;
         }
+        
+        // --- RESTORING ADMIN TOOLS ---
+        const tools = document.getElementById('admin-tools');
+        tools.innerHTML = `<button class="btn btn-sub" onclick="copyInvite('MEMBER')">INVITE MEMBER</button>`;
+        if(USER.role === "OWNER") {
+            tools.innerHTML += `<button class="btn btn-sub" onclick="copyInvite('OFFICER')">INVITE OFFICER</button>`;
+        }
+        if(USER.role === "OWNER" || USER.role === "OFFICER") {
+            tools.innerHTML += `<button class="btn btn-warn" onclick="startRitual()">START RITUAL</button>`;
+        }
+
         loadGist(); 
         setInterval(loadGist, 8000); 
     }
@@ -153,6 +164,27 @@
         const input = document.getElementById('chat-in'); const msg = input.value.trim();
         if (!msg || !USER) return;
         fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => { input.value = ''; loadGist(); });
+    }
+
+    function startRitual() {
+        document.getElementById('phoenix-layer').style.display='flex';
+        let c=10; 
+        let t=setInterval(() => {
+            c--;
+            document.getElementById('countdown').innerText=c;
+            if(c<=0){
+                clearInterval(t);
+                document.getElementById('phoenix-layer').style.display='none';
+                const w = prompt("WINNER NAME:");
+                if(w) fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => loadGist());
+            }
+        }, 1000);
+    }
+
+    function copyInvite(role) { 
+        const link = `${window.location.origin}${window.location.pathname}?invite=${role}`;
+        navigator.clipboard.writeText(link);
+        alert("COPIED!");
     }
 
     function logout() { localStorage.clear(); sessionStorage.clear(); location.reload(); }
