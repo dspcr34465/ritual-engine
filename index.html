@@ -3,27 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | V32.1 OMEGA</title>
+    <title>RITUAL | V33.10 OMEGA</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --fire: #ff6600; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
-        
         .screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index: 100; display: none; overflow-y: auto; padding: 15px; box-sizing: border-box; }
         .screen.active { display: flex !important; flex-direction: column; align-items: center; }
-        
         .pane { background:var(--panel); border:1px solid #222; padding:15px; width: 100%; max-width: 500px; box-sizing: border-box; margin-bottom: 12px; cursor: pointer; position: relative; }
-        .pane::after { content: "TAP TO FOCUS"; position: absolute; top: 5px; right: 8px; font-size: 8px; color: #333; }
-        
         .seal-module { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--gold); background-size: cover; background-position: center; display: flex; align-items: flex-end; background-color: #050505; }
         .seal-banner { width: 100%; background: rgba(0,0,0,0.85); padding: 12px; text-align: center; border-top: 1px solid var(--gold); }
-        
         .av-circle { width: 60px; height: 60px; border: 1px solid var(--gold); border-radius: 50%; background-size: cover; background-position: center; background-color: #111; display: flex; align-items: center; justify-content: center; position: relative; }
-        .av-circle:empty::before { content: "+"; font-size: 20px; opacity: 0.4; }
-
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:16px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top: 10px; }
-        .in { width:100%; background:#000; color:#fff; border:1px solid #333; padding:16px; margin:10px 0; box-sizing:border-box; text-align:center; }
-        
+        .in { width:100%; background:#000; color:#fff; border:1px solid #333; padding:16px; margin:10px 0; box-sizing:border-box; text-align:center; font-family: inherit; }
         .focus-layer { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index: 2000; background: #000; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; }
         .focus-layer.active { display: flex; }
         .ritual-flash { color: var(--fire); text-align: center; animation: flicker 0.2s infinite; font-weight: bold; }
@@ -32,7 +24,7 @@
 </head>
 <body>
 
-    <div id="auth-view" class="screen active">
+    <div id="auth-view" class="screen active" style="z-index: 1000; justify-content: center;">
         <div style="width:100%; max-width:350px; text-align:center; border:1px solid #111; padding:30px; background:var(--panel);">
             <h1 style="letter-spacing:10px;">RITUAL</h1>
             <small id="hud">[ SYSTEM: STANDBY ]</small>
@@ -57,8 +49,14 @@
         <div class="pane" onclick="focusModule('HALL-OF-FAME')"><small>🏆 RECORDS</small><div id="hof-pre" style="height:60px; overflow:hidden; font-size:10px; margin-top:5px;"></div></div>
         <div class="pane" onclick="focusModule('ARENA-CHAT')"><small>🔥 CHAT</small><div id="chat-pre" style="height:60px; overflow:hidden; font-size:11px; margin-top:5px;"></div></div>
 
-        <div id="cmd" class="pane" style="display:none; border:1px solid #ff444433; cursor:default;">
-            <button class="btn" onclick="document.getElementById('logo-up').click()">BRAND SEAL</button>
+        <div id="cmd" class="pane" style="display:none; border:1px solid #ff444433;">
+            <b style="color:var(--fire); font-size:10px;">COMMAND CENTER</b>
+            <div id="founder-panel" style="display:none; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:10px;">
+                <p style="font-size:9px; color:var(--gold);">FOUNDER PROTOCOL</p>
+                <button class="btn" onclick="focusModule('ONBOARD')">ONBOARD SUBSCRIBER</button>
+                <button class="btn" onclick="runSyncHistory()" style="background:#111; color:var(--gold); border:1px solid var(--gold);">SYNC HISTORICAL DATA</button>
+            </div>
+            <button class="btn" onclick="document.getElementById('logo-up').click()">BRAND ALLIANCE SEAL</button>
             <input type="file" id="logo-up" accept="image/*" style="display:none" onchange="procLogo(this)">
             <button class="btn" onclick="focusModule('RECON')">RECONCILE MEMBER</button>
             <button class="btn" onclick="document.getElementById('f-up').click()" style="background:var(--fire)">COMMENCE RITUAL</button>
@@ -74,21 +72,30 @@
     </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbwv-xhdUSL_QU2sNGDbko0fLWdn1Lu8wk6lo1D9F8lzh1mUAeFVH884-1IrzIV4gsWO/exec";
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbw3TcypMRSBPwVaZLqse2W_wDC1F_ge0wH52bAE6V0tAoZ1aoaMlmWgljFJeviyvvUS/exec";
     let USER = null; let RITUAL = false;
 
     function apiCall(params) {
         const old = document.getElementById('ritual-api'); if(old) old.remove();
-        const s = document.createElement('script');
-        s.id = 'ritual-api';
+        const s = document.createElement('script'); s.id = 'ritual-api';
         s.src = `${SCRIPT}?${params}&cb=${Date.now()}`;
         document.body.appendChild(s);
     }
 
     function handleResponse(d) {
-        if(d.status === "AUTHORIZED") { USER = d; renderArena(); }
+        if(d.status === "AUTHORIZED") { 
+            USER = d; 
+            if(USER.subStatus === "INITIATED") {
+                document.getElementById('hud').innerHTML = `<span style="color:var(--fire)">ACCESS PENDING PAYMENT</span>`;
+                return;
+            }
+            renderArena(); 
+        }
         else if (d.chat || d.history) { updateArenaData(d); }
-        else if (d.status === "SUCCESS") { exitFocus(); }
+        else if (d.status === "SUCCESS") { 
+            document.getElementById('hud').innerText = d.msg || "[ SUCCESS ]";
+            exitFocus(); 
+        }
         else if (d.status === "DENIED") { document.getElementById('hud').innerText = "[ DENIED ]"; }
     }
 
@@ -106,13 +113,10 @@
         document.getElementById('u-r').innerText = USER.role;
         document.getElementById('my-name').innerText = USER.user.toUpperCase();
         document.getElementById('my-bio-pre').innerText = USER.bio || "Write something here...";
-        
-        const seal = document.getElementById('seal-box');
-        if(USER.logo && seal) seal.style.backgroundImage = `url('${USER.logo}')`;
-        const av = document.getElementById('my-av');
-        if(USER.av && av) av.style.backgroundImage = `url('${USER.av}')`;
-        
+        if(USER.logo) document.getElementById('seal-box').style.backgroundImage = `url('${USER.logo}')`;
+        if(USER.av) document.getElementById('my-av').style.backgroundImage = `url('${USER.av}')`;
         if(USER.role !== "MEMBER") document.getElementById('cmd').style.display='block';
+        if(USER.isFounder) document.getElementById('founder-panel').style.display='block';
         setInterval(() => { if(!RITUAL) apiCall(`get_sync=true&key=${USER.key}`); }, 8000);
     }
 
@@ -121,41 +125,41 @@
         const body = document.getElementById('focus-body');
         const ctrl = document.getElementById('focus-controls');
         layer.classList.add('active'); body.innerHTML = ""; ctrl.innerHTML = "";
-
         if(type === 'VAULT') {
-            body.innerHTML = `<div style="text-align:center;"><div class="av-circle" id="av-focus" style="width:120px; height:120px; margin:auto; background-image:url('${USER.av}')" onclick="document.getElementById('av-up').click()"></div><h3>${USER.user.toUpperCase()}</h3><textarea id="b-in" class="in" style="height:150px; text-align:left;">${USER.bio}</textarea></div>`;
+            body.innerHTML = `<div style="text-align:center;"><div class="av-circle" id="av-focus" style="width:120px; height:120px; margin:auto; background-image:url('${USER.av}')" onclick="document.getElementById('av-up').click()"></div><h3 id="focus-title">${USER.user.toUpperCase()}</h3><textarea id="b-in" class="in" style="height:150px; text-align:left;">${USER.bio}</textarea></div>`;
             ctrl.innerHTML = `<button class="btn" onclick="saveVault()">RATIFY IDENTITY</button><input type="file" id="av-up" style="display:none" onchange="procAv(this)">`;
         } else if(type === 'ARENA-CHAT') {
             body.innerHTML = `<div id="chat-full">${document.getElementById('chat-pre').innerHTML}</div>`;
             ctrl.innerHTML = `<input id="msg-f" class="in" placeholder="Transmit..."><button class="btn" onclick="sendChatF()">EXECUTE</button>`;
         } else if(type === 'RECON') {
-            body.innerHTML = `<div style="text-align:center;"><h3>RECONCILE</h3><input id="rec-e" class="in" placeholder="EMAIL"><select id="rec-r" class="in"><option value="MEMBER">MEMBER</option><option value="OFFICER">OFFICER</option></select></div>`;
+            body.innerHTML = `<h3>MEMBER RECONCILE</h3><input id="rec-e" class="in" placeholder="EMAIL"><select id="rec-r" class="in"><option value="MEMBER">MEMBER</option><option value="OFFICER">OFFICER</option></select>`;
             ctrl.innerHTML = `<button class="btn" onclick="runRecon()">AMEND NODE</button>`;
+        } else if(type === 'ONBOARD') {
+            body.innerHTML = `<h3>ONBOARD OWNER</h3><input id="sub-e" class="in" placeholder="SUBSCRIBER EMAIL"><input id="sub-a" class="in" placeholder="ALLIANCE NAME">`;
+            ctrl.innerHTML = `<button class="btn" onclick="runOnboard()">ISSUE OWNER KEY</button>`;
         }
     }
 
     function exitFocus() { document.getElementById('focus-layer').classList.remove('active'); }
 
-    function updateArenaData(d) {
-        const cPre = document.getElementById('chat-pre');
-        const hPre = document.getElementById('hof-pre');
-        const chatHtml = (d.chat || []).map(m => `<div style="margin-bottom:8px; border-left:1px solid var(--gold); padding-left:8px;"><b>${m.user}:</b><br>${m.text}</div>`).join('');
-        const hofHtml = (d.history || []).map(h => `<div style="border-bottom:1px solid #111; padding:8px;">[${h.date}] ${h.name}</div>`).join('');
-        
-        if(cPre) cPre.innerHTML = chatHtml;
-        if(hPre) hPre.innerHTML = hofHtml;
-        
-        const cFull = document.getElementById('chat-full');
-        if(cFull) cFull.innerHTML = chatHtml;
+    async function saveVault() {
+        const b = document.getElementById('b-in').value;
+        const t = document.getElementById('focus-title'); t.innerText = "UPLOADING...";
+        await fetch(SCRIPT, { method: 'POST', body: JSON.stringify({ type: "ID", key: USER.key, bio: encodeURIComponent(b), av: USER.av }) });
+        USER.bio = b; document.getElementById('my-bio-pre').innerText = b; exitFocus();
     }
 
-    function saveVault() {
-        const bEl = document.getElementById('b-in');
-        const b = bEl ? bEl.value : USER.bio;
-        apiCall(`key=${USER.key}&update_id=true&bio=${encodeURIComponent(b)}&av=${encodeURIComponent(USER.av)}`);
-        USER.bio = b; 
-        const bPre = document.getElementById('my-bio-pre');
-        if(bPre) bPre.innerText = b;
+    async function procLogo(input) {
+        if (!input.files[0]) return;
+        const reader = new FileReader(); reader.onload = (e) => {
+            const img = new Image(); img.onload = async () => {
+                const cvs = document.createElement('canvas'); cvs.width=400; cvs.height=400;
+                cvs.getContext('2d').drawImage(img, 0, 0, 400, 400);
+                const lData = cvs.toDataURL("image/jpeg", 0.6);
+                await fetch(SCRIPT, { method: 'POST', body: JSON.stringify({ type: "LOGO", key: USER.key, logo: lData }) });
+                location.reload();
+            }; img.src = e.target.result;
+        }; reader.readAsDataURL(input.files[0]);
     }
 
     function procAv(input) {
@@ -164,38 +168,39 @@
                 const cvs = document.createElement('canvas'); cvs.width=128; cvs.height=128;
                 cvs.getContext('2d').drawImage(img, 0, 0, 128, 128);
                 USER.av = cvs.toDataURL("image/jpeg", 0.5);
-                const focus = document.getElementById('av-focus');
-                const main = document.getElementById('my-av');
-                if(focus) focus.style.backgroundImage = `url('${USER.av}')`;
-                if(main) main.style.backgroundImage = `url('${USER.av}')`;
-                saveVault();
+                if(document.getElementById('av-focus')) document.getElementById('av-focus').style.backgroundImage = `url('${USER.av}')`;
             }; img.src = e.target.result;
         }; reader.readAsDataURL(input.files[0]);
     }
 
-    function procLogo(input) {
-        const reader = new FileReader(); reader.onload = (e) => {
-            const img = new Image(); img.onload = () => {
-                const cvs = document.createElement('canvas'); cvs.width=500; cvs.height=500;
-                cvs.getContext('2d').drawImage(img, 0, 0, 500, 500);
-                apiCall(`key=${USER.key}&update_logo=${encodeURIComponent(cvs.toDataURL("image/jpeg", 0.6))}`);
-                setTimeout(() => location.reload(), 2500);
-            }; img.src = e.target.result;
-        }; reader.readAsDataURL(input.files[0]);
+    function runSyncHistory() {
+        if(confirm("Generate keys and email ALL legacy users?")) {
+            apiCall(`sync_history=true&from_owner=${USER.key}`);
+        }
     }
 
-    function sendChatF() {
-        const mEl = document.getElementById('msg-f');
-        if(!mEl || !mEl.value) return;
-        apiCall(`key=${USER.key}&user_name=${encodeURIComponent(USER.user)}&chat_msg=${encodeURIComponent(mEl.value)}`);
-        mEl.value = '';
+    function runOnboard() {
+        const e = document.getElementById('sub-e').value; const a = document.getElementById('sub-a').value;
+        apiCall(`initiate_email=${encodeURIComponent(e)}&alliance_name=${encodeURIComponent(a)}&from_owner=${USER.key}`);
     }
 
     function runRecon() {
-        const eEl = document.getElementById('rec-e');
-        const rEl = document.getElementById('rec-r');
-        if(!eEl) return;
-        apiCall(`initiate_email=${encodeURIComponent(eEl.value)}&from_owner=${USER.key}&role=${rEl.value}`);
+        const e = document.getElementById('rec-e').value; const r = document.getElementById('rec-r').value;
+        apiCall(`member_recon=true&email=${encodeURIComponent(e)}&role=${r}&from_owner=${USER.key}`);
+    }
+
+    function sendChatF() {
+        const m = document.getElementById('msg-f').value; if(!m) return;
+        apiCall(`key=${USER.key}&user_name=${encodeURIComponent(USER.user)}&chat_msg=${encodeURIComponent(m)}`);
+        document.getElementById('msg-f').value = '';
+    }
+
+    function updateArenaData(d) {
+        const chatHtml = (d.chat || []).map(m => `<div style="margin-bottom:8px; border-left:1px solid var(--gold); padding-left:8px;"><b>${m.user}:</b><br>${m.text}</div>`).join('');
+        const hofHtml = (d.history || []).map(h => `<div style="border-bottom:1px solid #111; padding:8px;">[${h.date}] ${h.name}</div>`).join('');
+        if(document.getElementById('chat-pre')) document.getElementById('chat-pre').innerHTML = chatHtml;
+        if(document.getElementById('hof-pre')) document.getElementById('hof-pre').innerHTML = hofHtml;
+        if(document.getElementById('chat-full')) document.getElementById('chat-full').innerHTML = chatHtml;
     }
 
     function handleRaffle(input) {
@@ -209,7 +214,6 @@
 
     function startRitual(hat) {
         RITUAL = true; const h = document.getElementById('hof-pre');
-        if(!h) return;
         h.innerHTML = "<div class='ritual-flash'><br>THE PHOENIX HAS BEEN FED...</div>";
         setTimeout(() => {
             let t = 10;
