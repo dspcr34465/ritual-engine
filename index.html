@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V23.8 MASTER</title>
+    <title>RITUAL ENGINE | V23.9 VISUAL MASTER</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
@@ -24,7 +24,7 @@
 <div class="app-shell">
     <div id="auth-view" style="text-align:center; padding-top:50px;">
         <h2 style="letter-spacing:5px;">RITUAL ENGINE</h2>
-        <div id="status-hud" style="color:var(--warn); font-size:11px; margin-bottom:10px;"></div>
+        <div id="status-hud" style="color:var(--warn); font-size:11px; margin-bottom:10px;">SYSTEM STANDBY</div>
         <div id="login-form">
             <input id="u" class="in" placeholder="USERNAME" autocapitalize="none">
             <input id="p" class="in" type="password" placeholder="PASSWORD">
@@ -68,7 +68,7 @@
             <small>RAFFLE OPERATIONS</small>
             <input type="file" id="raffle-file" accept=".csv, .xlsx, .xls" style="display:none;" onchange="handleRaffle(this)">
             <button class="btn" style="background:#ff4444; color:#000;" onclick="document.getElementById('raffle-file').click()">UPLOAD RAFFLE DATA</button>
-            
+            <br>
             <button class="btn btn-sub" onclick="generateInvite('MEMBER')">INVITE MEMBER</button>
             <button id="officer-invite-btn" class="btn btn-sub" onclick="generateInvite('OFFICER')" style="display:none;">INVITE OFFICER</button>
         </div>
@@ -76,110 +76,4 @@
 </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbwH-NpU1DCE7JESuMhb2Sg3EBDZc9XoRB7Zj9vKVrr_AECC6OTrLpj7-tdvqMkqBJUZ/exec";
-    let USER = null;
-
-    async function login() {
-        const u = document.getElementById('u').value.trim();
-        const p = document.getElementById('p').value.trim();
-        const hud = document.getElementById('status-hud');
-        if(!u || !p) return;
-
-        hud.innerText = "LINKING...";
-        const r = await fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
-        const data = await r.json();
-
-        if(data.status === "AUTHORIZED") {
-            USER = data;
-            document.getElementById('auth-view').style.display = 'none';
-            document.getElementById('arena-view').style.display = 'block';
-            renderUI();
-            sync();
-            setInterval(sync, 8000);
-        } else { hud.innerText = "DENIED: " + data.status; }
-    }
-
-    function renderUI() {
-        document.getElementById('alliance-name').innerText = USER.alliance;
-        document.getElementById('user-role').innerText = USER.role;
-        if(USER.logo) document.getElementById('logo-header').style.backgroundImage = "url('" + USER.logo + "')";
-
-        if(USER.role === "OWNER" || USER.role === "OFFICER") {
-            document.getElementById('command-center').style.display = 'block';
-            if(USER.role === "OWNER") {
-                document.getElementById('branding-tools').style.display = 'block';
-                document.getElementById('officer-invite-btn').style.display = 'block';
-            }
-        }
-    }
-
-    async function sync() {
-        if(!USER) return;
-        const r = await fetch(SCRIPT + "?get_sync=true&key=" + USER.key);
-        const g = await r.json();
-        document.getElementById('chat-box').innerHTML = (g.chat || []).map(m => "<div><b>" + m.user + ":</b> " + m.text + "</div>").join('');
-        document.getElementById('hof-box').innerHTML = (g.history || []).map(h => "<div>[" + h.date + "] " + h.name + "</div>").join('') || "No Records.";
-        const c = document.getElementById('chat-box'); c.scrollTop = c.scrollHeight;
-    }
-
-    async function sendChat() {
-        const m = document.getElementById('msg-in').value.trim();
-        if(!m) return;
-        await fetch(SCRIPT + "?key=" + USER.key + "&chat_msg=" + encodeURIComponent(m));
-        document.getElementById('msg-in').value = '';
-        sync();
-    }
-
-    async function updateBranding() {
-        const n = document.getElementById('brand-name').value;
-        const l = document.getElementById('brand-logo').value;
-        await fetch(SCRIPT + "?update_branding=true&key=" + USER.key + "&new_name=" + encodeURIComponent(n) + "&new_logo=" + encodeURIComponent(l));
-        alert("Branding Saved. Refreshing Terminal...");
-        location.reload();
-    }
-
-    function handleRaffle(input) {
-        const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            const sheetName = workbook.SheetNames[0];
-            const sheet = workbook.Sheets[sheetName];
-            const rows = XLSX.utils.sheet_to_json(sheet, {header: 1});
-            
-            let hat = [];
-            rows.forEach(row => {
-                const name = row[0];
-                const entries = parseInt(row[1]);
-                if(name && !isNaN(entries)) {
-                    for(let i=0; i<entries; i++) hat.push(name.toString().trim());
-                }
-            });
-
-            if(hat.length > 0) {
-                const winner = hat[Math.floor(Math.random() * hat.length)];
-                if(confirm("WINNER DRAWN: " + winner + "\nLog to Hall of Fame?")) {
-                    fetch(SCRIPT + "?key=" + USER.key + "&log_winner=" + encodeURIComponent(winner)).then(sync);
-                }
-            } else { alert("Error reading file. Ensure 1st column is Name and 2nd is Entries."); }
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    function generateInvite(role) {
-        alert("GENERATING " + role + " INVITE KEY...");
-        fetch(SCRIPT + "?creator_key=" + USER.key + "&invite_role=" + role)
-            .then(r => r.json()).then(data => {
-                if(data.status === "SUCCESS") {
-                    prompt("KEY GENERATED FOR " + role + ":", data.key);
-                } else {
-                    alert("Error: " + (data.msg || "Failed to generate key"));
-                }
-            });
-    }
-
-    function logout() { localStorage.clear(); location.reload(); }
-</script>
-</body>
-</html>
+    const SCRIPT = "
