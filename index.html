@@ -3,111 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V29.1</title>
+    <title>RITUAL ENGINE | V30.1</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
-        :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; --fire: #ff6600; }
-        body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
+        :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
+        body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100%; overflow-x:hidden; }
         
-        /* STACKING MODULES */
-        .app-shell { padding:15px; max-width:1200px; margin:auto; display: flex; flex-direction: column; gap: 15px; }
-        @media (min-width: 900px) { .app-shell { flex-direction: row; flex-wrap: wrap; justify-content: center; } }
+        /* SCREEN ISOLATION */
+        .screen { display: none; min-height: 100vh; width: 100vw; box-sizing: border-box; padding: 20px; flex-direction: column; align-items: center; }
+        .active-screen { display: flex; }
+
+        /* AUTH TERMINAL (Clean & Centered) */
+        #auth-view { justify-content: center; background: radial-gradient(circle, #050505 0%, #000 100%); }
+        .terminal-box { width: 100%; max-width: 350px; text-align: center; border: 1px solid #111; padding: 30px; background: var(--panel); }
+
+        /* ARENA LAYOUT (Vertical Stack) */
+        .arena-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
         .pane { background:var(--panel); border:1px solid #222; padding:15px; width: 100%; box-sizing: border-box; }
-        @media (min-width: 900px) { .pane { flex: 1 1 350px; } #cmd, .full-width { width: 100%; flex: 1 1 100%; } }
-
-        /* ALLIANCE SEAL */
-        .seal-module { width: 100%; aspect-ratio: 1/1; border: 2px solid var(--gold); background-size: cover; background-position: center; display: flex; align-items: flex-end; background-color: #050505; }
-        @media (min-width: 900px) { .seal-module { flex: 1 1 450px; max-width: 500px; } }
-        .seal-banner { width: 100%; background: rgba(0,0,0,0.85); padding: 15px; text-align: center; border-top: 1px solid var(--gold); backdrop-filter: blur(5px); }
         
-        /* PROFILE CARD */
-        .profile-card { display: flex; align-items: center; gap: 15px; padding: 10px; background: #080808; border: 1px solid #111; }
-        .avatar-box { width: 80px; height: 80px; border: 1px solid var(--gold); background-size: cover; background-position: center; background-color: #111; flex-shrink: 0; cursor: pointer; position: relative; }
-        .avatar-box::after { content: "CHANGE"; position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.7); font-size: 8px; text-align: center; color: #fff; padding: 2px 0; }
-        .bio-text { font-size: 11px; color: #777; font-style: italic; line-height: 1.4; margin-top: 5px; }
-
-        .display { height:180px; background:#000; border:1px solid #111; overflow-y:auto; padding:10px; color:#eee; font-size:12px; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:12px; font-weight:bold; cursor:pointer; margin-top:10px; text-transform:uppercase; font-size:11px; }
-        .in { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:10px 0; box-sizing:border-box; text-align:center; }
-        .ritual-flash { color: var(--fire); text-align: center; animation: flicker 0.2s infinite; font-weight: bold; }
+        /* COMPONENTS */
+        .seal-module { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--gold); background-size: cover; background-position: center; display: flex; align-items: flex-end; }
+        .seal-banner { width: 100%; background: rgba(0,0,0,0.85); padding: 12px; text-align: center; border-top: 1px solid var(--gold); }
+        
+        .id-strip { display: flex; align-items: center; gap: 15px; padding: 10px; border: 1px solid #111; }
+        .av-circle { width: 65px; height: 65px; border: 1px solid var(--gold); border-radius: 50%; background-size: cover; background-position: center; flex-shrink: 0; }
+        
+        .display { height:180px; background:#000; border:1px solid #111; overflow-y:auto; padding:10px; color:#eee; font-size:12px; margin-bottom: 5px; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:16px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; margin-top: 10px; }
+        .in { width:100%; background:#000; color:#fff; border:1px solid #333; padding:16px; margin:10px 0; box-sizing:border-box; text-align:center; font-family: inherit; }
+        
+        .ritual-flash { color: #ff6600; text-align: center; animation: flicker 0.2s infinite; font-weight: bold; }
         @keyframes flicker { 0%, 100% { opacity:1; } 50% { opacity:0.3; } }
     </style>
 </head>
 <body>
 
-<div class="app-shell">
-    <div id="auth-view" style="width:100%; text-align:center; padding-top:10vh;">
-        <h2>RITUAL ENGINE</h2>
-        <div id="hud" style="color:var(--warn); font-size:11px; margin-bottom:10px;">INITIALIZING NODE...</div>
-        <input id="u" class="in" placeholder="USERNAME" autocapitalize="none">
-        <input id="p" class="in" type="password" placeholder="PASSWORD">
-        <button class="btn" onclick="login()">INITIALIZE</button>
+    <div id="auth-view" class="screen active-screen">
+        <div class="terminal-box">
+            <h1 style="letter-spacing:12px; margin-bottom: 5px;">RITUAL</h1>
+            <div id="hud" style="color:#444; font-size:9px; margin-bottom:25px;">[ STATUS: STANDBY ]</div>
+            <input id="u" class="in" placeholder="IDENTITY" autocapitalize="none">
+            <input id="p" class="in" type="password" placeholder="PASSKEY">
+            <button class="btn" onclick="login()">INITIALIZE NODE</button>
+            <p style="font-size:10px; margin-top: 20px; color:#333;">RATIFICATION KEY? <span onclick="showView('ratify-view')" style="color:var(--gold); cursor:pointer;">START HERE</span></p>
+        </div>
     </div>
 
-    <div id="arena-view" style="display:none; width: 100%; display: contents;">
-        <div id="seal-box" class="seal-module">
-            <div class="seal-banner">
-                <h2 id="all-n" style="margin:0; font-size:20px; text-transform:uppercase;"></h2>
-                <small id="u-r" style="color:var(--gold); letter-spacing:3px;"></small>
-            </div>
+    <div id="ratify-view" class="screen">
+        <div class="terminal-box">
+            <h2>RATIFY ACCESS</h2>
+            <input id="k-in" class="in" placeholder="RITUAL-XXXX">
+            <input id="u-new" class="in" placeholder="NEW USERNAME">
+            <input id="p-new" class="in" type="password" placeholder="NEW PASSWORD">
+            <button class="btn" onclick="runRatify()">BURN KEY</button>
+            <p onclick="showView('auth-view')" style="font-size:10px; cursor:pointer; color:#444;">CANCEL</p>
         </div>
+    </div>
 
-        <div class="pane">
-            <div class="profile-card">
-                <div id="my-avatar" class="avatar-box" onclick="document.getElementById('av-up').click()"></div>
-                <div style="flex:1;">
-                    <div style="font-weight:bold; font-size:14px;" id="my-name"></div>
-                    <div id="my-bio" class="bio-text"></div>
-                    <button class="btn" style="width:auto; padding:4px 8px; font-size:9px;" onclick="toggleBio()">EDIT BIO</button>
+    <div id="arena-view" class="screen">
+        <div class="arena-container">
+            <div id="seal-box" class="seal-module">
+                <div class="seal-banner">
+                    <h2 id="all-n" style="margin:0; font-size:18px; text-transform:uppercase;"></h2>
+                    <small id="u-r" style="color:var(--gold); letter-spacing:4px; font-weight:bold;"></small>
                 </div>
             </div>
-            <input type="file" id="av-up" accept="image/*" style="display:none" onchange="processAvatar(this)">
-            <div id="bio-zone" style="display:none;">
-                <textarea id="bio-in" class="in" style="height:60px; font-size:11px; text-align:left;"></textarea>
-                <button class="btn" onclick="saveIdentity()">RATIFY IDENTITY</button>
+
+            <div class="pane">
+                <div class="id-strip">
+                    <div id="my-av" class="av-circle" onclick="document.getElementById('av-up').click()"></div>
+                    <div style="flex:1;">
+                        <div style="font-weight:bold; font-size:14px; color:#fff;" id="my-name"></div>
+                        <div id="my-bio" style="font-size:11px; color:#666; font-style:italic;"></div>
+                    </div>
+                    <button onclick="toggleBio()" style="background:none; border:1px solid #333; color:var(--gold); font-size:9px; padding:6px;">BIO</button>
+                </div>
+                <input type="file" id="av-up" accept="image/*" style="display:none" onchange="procAv(this)">
+                <div id="bio-zone" style="display:none; margin-top:10px;">
+                    <textarea id="bio-in" class="in" style="height:60px; text-align:left; font-size:11px;"></textarea>
+                    <button class="btn" style="padding:10px;" onclick="saveId()">RATIFY IDENTITY</button>
+                </div>
+            </div>
+            
+            <div class="pane"><small>🏆 HALL OF FAME</small><div id="hof" class="display"></div></div>
+            
+            <div class="pane"><small>🔥 CHAT</small><div id="chat" class="display"></div>
+                <input id="msg" class="in" placeholder="Transmit..."><button class="btn" onclick="sendChat()">EXECUTE</button>
+            </div>
+
+            <div id="cmd" class="pane" style="display:none; border:1px solid #ff444433;">
+                <b style="color:#ff6600; font-size:10px;">COMMAND CENTER</b>
+                <button class="btn" style="background:#111; color:var(--gold); border:1px solid #333;" onclick="document.getElementById('logo-up').click()">BRAND ALLIANCE SEAL</button>
+                <input type="file" id="logo-up" accept="image/*" style="display:none" onchange="procLogo(this)">
+                <button class="btn" style="background:#ff4444; color:#000;" onclick="document.getElementById('f-up').click()">COMMENCE RITUAL</button>
+                <input type="file" id="f-up" accept=".csv, .xlsx" style="display:none;" onchange="handleRaffle(this)">
+                <button onclick="location.reload()" style="background:none; border:none; color:#444; width:100%; margin-top:15px; font-size:10px;">TERMINATE SESSION</button>
             </div>
         </div>
-        
-        <div class="pane"><small>🏆 HALL OF FAME</small><div id="hof" class="display"></div></div>
-        
-        <div class="pane"><small>🔥 CHAT</small><div id="chat" class="display"></div>
-            <input id="msg" class="in" placeholder="Transmit..."><button class="btn" onclick="sendChat()">EXECUTE</button>
-        </div>
-
-        <div id="cmd" class="pane" style="display:none; border:2px dashed var(--gold);">
-            <b>COMMAND CENTER</b>
-            <button class="btn" style="background:#222; color:var(--gold); border:1px solid var(--gold);" onclick="document.getElementById('logo-up').click()">RE-BRAND ALLIANCE SEAL</button>
-            <input type="file" id="logo-up" accept="image/*" style="display:none" onchange="processBranding(this)">
-            <button class="btn" style="background:var(--warn); color:#000;" onclick="document.getElementById('f-up').click()">COMMENCE RITUAL</button>
-            <button class="btn" onclick="getTap('MEMBER')" style="background:#111; color:var(--gold); border:1px solid #333;">GENERATE MEMBER TAP</button>
-            <input type="file" id="f-up" accept=".csv, .xlsx" style="display:none;" onchange="handleRaffle(this)">
-            <button onclick="location.reload()" style="background:none; border:none; color:#444; width:100%; margin-top:10px; font-size:10px;">DISCONNECT</button>
-        </div>
     </div>
-</div>
 
 <script>
     const SCRIPT = "https://script.google.com/macros/s/AKfycbwBl6FjmfbJ4s6RCbjh_FMxB5x_SpccY8xVUCZdRrqkpxiIVWV40W2p3_NZionm1b7T/exec";
     let USER = null; let RITUAL = false;
 
+    function showView(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+        document.getElementById(id).classList.add('active-screen');
+        window.scrollTo(0,0);
+    }
+
     async function login() {
+        const hud = document.getElementById('hud');
+        hud.innerText = "[ AUTHENTICATING... ]";
         const u = document.getElementById('u').value.trim();
         const p = document.getElementById('p').value.trim();
         const res = await fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
         const d = await res.json();
+        
         if(d.status === "AUTHORIZED") {
             USER = d; 
-            document.getElementById('auth-view').style.display='none';
-            document.getElementById('arena-view').style.display='flex';
+            showView('arena-view');
             document.getElementById('all-n').innerText = USER.alliance;
             document.getElementById('u-r').innerText = USER.role;
             document.getElementById('my-name').innerText = USER.user.toUpperCase();
             document.getElementById('my-bio').innerText = USER.bio;
             if(USER.logo) document.getElementById('seal-box').style.backgroundImage = `url('${USER.logo}')`;
-            if(USER.avatar) document.getElementById('my-avatar').style.backgroundImage = `url('${USER.avatar}')`;
+            if(USER.av) document.getElementById('my-av').style.backgroundImage = `url('${USER.av}')`;
             if(USER.role !== "MEMBER") document.getElementById('cmd').style.display='block';
             sync(); setInterval(sync, 8000);
-        } else { document.getElementById('hud').innerText = "ACCESS DENIED"; }
+        } else { hud.innerText = "[ ACCESS DENIED ]"; }
     }
 
     function toggleBio() {
@@ -116,53 +140,89 @@
         document.getElementById('bio-in').value = USER.bio;
     }
 
-    async function processAvatar(input) {
+    async function procAv(input) {
         if (!input.files[0]) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
-                const cvs = document.createElement('canvas');
-                cvs.width = 200; cvs.height = 200; // Small, efficient size
-                cvs.getContext('2d').drawImage(img, 0, 0, 200, 200);
-                USER.avatar = cvs.toDataURL("image/jpeg", 0.6); // 60% quality compression
-                document.getElementById('my-avatar').style.backgroundImage = `url('${USER.avatar}')`;
-                saveIdentity(); // Auto-save on photo change
+                const cvs = document.createElement('canvas'); cvs.width = 150; cvs.height = 150;
+                cvs.getContext('2d').drawImage(img, 0, 0, 150, 150);
+                USER.av = cvs.toDataURL("image/jpeg", 0.6);
+                document.getElementById('my-av').style.backgroundImage = `url('${USER.av}')`;
+                saveId();
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
     }
 
-    async function saveIdentity() {
+    async function saveId() {
         const bio = document.getElementById('bio-in').value || USER.bio;
-        const res = await fetch(`${SCRIPT}?key=${USER.key}&update_identity=true&bio=${encodeURIComponent(bio)}&avatar=${encodeURIComponent(USER.avatar || "")}`);
-        const d = await res.json();
-        if(d.status === "SUCCESS") { 
-            USER.bio = bio; 
-            document.getElementById('my-bio').innerText = bio;
-            document.getElementById('bio-zone').style.display = 'none';
-        }
+        await fetch(`${SCRIPT}?key=${USER.key}&update_id=true&bio=${encodeURIComponent(bio)}&av=${encodeURIComponent(USER.av || "")}`);
+        USER.bio = bio; document.getElementById('my-bio').innerText = bio;
+        document.getElementById('bio-zone').style.display = 'none';
     }
 
-    async function processBranding(input) {
+    async function procLogo(input) {
         if (!input.files[0]) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
-                const cvs = document.createElement('canvas');
-                cvs.width = 600; cvs.height = 600;
+                const cvs = document.createElement('canvas'); cvs.width = 600; cvs.height = 600;
                 cvs.getContext('2d').drawImage(img, 0, 0, 600, 600);
-                const logoData = cvs.toDataURL("image/jpeg", 0.6);
-                fetch(`${SCRIPT}?key=${USER.key}&update_logo=${encodeURIComponent(logoData)}`).then(() => location.reload());
+                const logo = cvs.toDataURL("image/jpeg", 0.6);
+                fetch(`${SCRIPT}?key=${USER.key}&update_logo=${encodeURIComponent(logo)}`).then(() => location.reload());
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
     }
 
-    // ... (Keep existing Sync, Chat, Raffle, and Phoenix logic from V28.0) ...
+    async function sync() {
+        if(!USER || RITUAL) return;
+        const res = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`);
+        const g = await res.json();
+        document.getElementById('chat').innerHTML = (g.chat || []).map(m => `<div><b>${m.user}:</b> ${m.text}</div>`).join('');
+        document.getElementById('hof').innerHTML = (g.history || []).map(h => `<div>[${h.date}] ${h.name}</div>`).join('');
+    }
+
+    function handleRaffle(input) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+            let hat = []; rows.forEach(r => { if(r[0] && r[1]) for(let i=0; i<r[1]; i++) hat.push(r[0]); });
+            if(hat.length) startRitual(hat);
+        };
+        reader.readAsArrayBuffer(input.files[0]);
+    }
+
+    function startRitual(hat) {
+        RITUAL = true; const h = document.getElementById('hof');
+        h.innerHTML = "<div class='ritual-flash'><br>THE PHOENIX HAS BEEN FED...</div>";
+        setTimeout(() => {
+            let t = 10;
+            const i = setInterval(() => {
+                const n = hat[Math.floor(Math.random()*hat.length)];
+                h.innerHTML = `<div style='text-align:center;'><br><span style='color:#444'>${n}</span><br><span style='font-size:40px'>${t}</span></div>`;
+                if(t-- <= 0) {
+                    clearInterval(i); const w = hat[Math.floor(Math.random()*hat.length)];
+                    h.innerHTML = `<div class='ritual-flash' style='color:var(--gold)'><br>RITUAL COMPLETE<br><br><span style='font-size:22px'>${w}</span></div>`;
+                    fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => {
+                        setTimeout(() => { RITUAL = false; sync(); }, 5000);
+                    });
+                }
+            }, 1000);
+        }, 2000);
+    }
+
+    async function sendChat() {
+        const m = document.getElementById('msg').value; if(!m) return;
+        await fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(m)}`);
+        document.getElementById('msg').value = ''; sync();
+    }
 </script>
 </body>
 </html>
