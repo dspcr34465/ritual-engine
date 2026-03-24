@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V20.1 ADMIN</title>
+    <title>RITUAL ENGINE | V20.2 ADMIN</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:monospace; }
         .app-shell { padding:15px; text-align:center; max-width:600px; margin:auto; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:16px; font-weight:bold; cursor:pointer; margin-bottom:10px; font-size:13px; text-transform:uppercase; letter-spacing:1px; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:16px; font-weight:bold; cursor:pointer; margin-bottom:10px; font-size:13px; text-transform:uppercase; }
         .btn-sub { background:#1a1a1a; color:var(--gold); border:1px solid #333; padding:12px; font-size:11px; }
-        .btn-warn { background:var(--warn); color:#000; }
+        .btn-warn { background:var(--warn); color:#000; margin-top:10px; }
         .in { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:10px 0; box-sizing:border-box; }
         #chat { height:300px; background:#050505; border:1px solid #222; overflow-y:auto; text-align:left; padding:12px; margin-top:15px; font-size:13px; color:#eee; }
         .header { border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; }
-        #admin-panel { margin-top:15px; padding:10px; border:1px dashed #444; background:#0a0a0a; }
+        #admin-panel { margin-top:20px; padding:15px; border:2px solid var(--gold); background:#0a0a0a; display:none; }
     </style>
 </head>
 <body>
@@ -32,24 +32,23 @@
         <div class="header">
             <div style="text-align:left;">
                 <h3 id="u-name" style="margin:0;"></h3>
-                <small id="u-role" style="color:#666; text-transform:uppercase;"></small>
+                <small id="u-role-debug" style="color:#666;"></small>
             </div>
-            <button onclick="logout()" style="background:none; border:none; color:#444; font-size:10px;">DISCONNECT</button>
+            <button onclick="logout()" style="background:none; border:none; color:#444; font-size:10px;">LOGOUT</button>
         </div>
         
-        <div id="chat">Connecting to Node...</div>
+        <div id="chat">Connecting...</div>
         <input type="text" id="msg" class="in" placeholder="Transmission...">
         <button class="btn" onclick="send()">EXECUTE</button>
 
-        <div id="admin-panel" style="display:none;">
-            <small style="display:block; margin-bottom:10px; color:#666;">ALLIANCE COMMAND</small>
-            <div id="admin-buttons"></div>
+        <div id="admin-panel">
+            <b style="color:var(--gold); letter-spacing:2px;">COMMAND CENTER</b>
+            <div id="admin-buttons" style="margin-top:10px;"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // URL CONSTRUCTOR
     var b1 = "https://script.google.com/macros/s/";
     var b2 = "AKfycbxjcRYytKaTjRwixtYkce-_wZin97vE_k7eLXrV5a_GbTl7AcUBd-NFtpDfNSgrkkuD";
     var b3 = "/exec";
@@ -58,17 +57,12 @@
 
     function showLogin() {
         document.getElementById("inputs").innerHTML = 
-            '<input id="user" class="in" placeholder="USERNAME" autocapitalize="none">' +
-            '<input id="pass" class="in" type="password" placeholder="PASSWORD">' +
-            '<button class="btn" onclick="connect()">CONNECT</button>';
+            '<input id="user" class="in" placeholder="USER"><input id="pass" class="in" type="password" placeholder="PASS"><button class="btn" onclick="connect()">CONNECT</button>';
     }
 
     function connect() {
         var u = document.getElementById("user").value.trim();
         var p = document.getElementById("pass").value.trim();
-        if(!u || !p) return;
-        document.getElementById("status").innerText = "LINKING...";
-        
         fetch(SCRIPT + "?user=" + encodeURIComponent(u) + "&pass=" + encodeURIComponent(p))
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -77,9 +71,7 @@
                 localStorage.setItem("ritual_user", JSON.stringify(data));
                 sessionStorage.setItem("active_session", "true");
                 launchArena();
-            } else { 
-                document.getElementById("status").innerText = "ACCESS DENIED"; 
-            }
+            } else { document.getElementById("status").innerText = "ACCESS DENIED"; }
         });
     }
 
@@ -87,21 +79,20 @@
         document.getElementById("auth").style.display = "none";
         document.getElementById("arena").style.display = "block";
         document.getElementById("u-name").innerText = USER.name;
-        document.getElementById("u-role").innerText = USER.role;
+        
+        // DEBUG: Tell us what the sheet actually says
+        var rawRole = USER.role ? USER.role.toUpperCase().trim() : "NONE";
+        document.getElementById("u-role-debug").innerText = "ROLE DETECTED: " + rawRole;
 
-        // --- UPDATED ADMIN LOGIC (V20.1) ---
-        var role = USER.role ? USER.role.toUpperCase() : "MEMBER";
-        var adminPanel = document.getElementById("admin-panel");
-        var adminBtns = document.getElementById("admin-buttons");
-
-        if (role === "OWNER" || role === "OFFICER") {
-            adminPanel.style.display = "block";
-            var html = '<button class="btn btn-sub" onclick="copyInvite(\'MEMBER\')">INVITE MEMBER</button>';
-            if (role === "OWNER") {
-                html += '<button class="btn btn-sub" onclick="copyInvite(\'OFFICER\')">INVITE OFFICER</button>';
+        // BRUTEFORCE CHECK
+        if (rawRole === "OWNER" || rawRole === "OFFICER") {
+            document.getElementById("admin-panel").style.display = "block";
+            var btns = '<button class="btn btn-sub" onclick="copyInvite(\'MEMBER\')">INVITE MEMBER</button>';
+            if (rawRole === "OWNER") {
+                btns += '<button class="btn btn-sub" onclick="copyInvite(\'OFFICER\')">INVITE OFFICER</button>';
             }
-            html += '<button class="btn btn-warn" onclick="alert(\'RITUAL ENGAGED\')" style="margin-top:10px;">START RITUAL</button>';
-            adminBtns.innerHTML = html;
+            btns += '<button class="btn btn-warn" onclick="alert(\'RITUAL ENGAGED\')">START RITUAL</button>';
+            document.getElementById("admin-buttons").innerHTML = btns;
         }
 
         sync();
@@ -115,10 +106,9 @@
         .then(function(g) {
             var c = g.chat || [];
             document.getElementById("chat").innerHTML = c.map(function(m) {
-                return "<div><b style='color:#d4af37'>" + m.user + ":</b> " + m.text + "</div>";
+                return "<div><b>" + m.user + ":</b> " + m.text + "</div>";
             }).join("");
-            var box = document.getElementById("chat");
-            box.scrollTop = box.scrollHeight;
+            var b = document.getElementById("chat"); b.scrollTop = b.scrollHeight;
         });
     }
 
@@ -126,17 +116,11 @@
         var m = document.getElementById("msg").value;
         if(!m) return;
         fetch(SCRIPT + "?key=" + USER.key + "&chat_msg=" + encodeURIComponent(m)).then(function() {
-            document.getElementById("msg").value = "";
-            sync();
+            document.getElementById("msg").value = ""; sync();
         });
     }
 
-    function copyInvite(type) {
-        var link = window.location.origin + window.location.pathname + "?invite=" + type;
-        navigator.clipboard.writeText(link);
-        alert("INVITE LINK COPIED: " + type);
-    }
-
+    function copyInvite(t) { alert("Invite Copied: " + t); }
     function logout() { localStorage.clear(); sessionStorage.clear(); location.reload(); }
 
     window.onload = function() {
