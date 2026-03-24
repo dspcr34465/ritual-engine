@@ -3,111 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V24.0 PHOENIX</title>
+    <title>RITUAL ENGINE | V27.1 SANDBOX</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; --fire: #ff6600; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
         .app-shell { padding:15px; max-width:800px; margin:auto; }
         .pane { background:var(--panel); border:1px solid #222; padding:15px; margin-bottom:15px; }
-        .display { height:180px; background:#000; border:1px solid #111; overflow-y:auto; padding:10px; color:#eee; font-size:12px; margin-bottom:10px; line-height:1.6; }
+        
+        /* THE GREAT SEAL (1:1 Branding Module) */
+        .seal-module { 
+            width: 100%; aspect-ratio: 1/1; border: 1px solid #222; 
+            background-size: cover; background-position: center; 
+            margin-bottom: 15px; display: flex; align-items: flex-end; 
+            background-color: #050505;
+        }
+        .seal-banner { width: 100%; background: rgba(0,0,0,0.8); padding: 15px; text-align: center; border-top: 1px solid var(--gold); backdrop-filter: blur(4px); }
+        
+        .display { height:180px; background:#000; border:1px solid #111; overflow-y:auto; padding:10px; color:#eee; font-size:12px; margin-bottom:10px; }
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; }
-        .in { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:10px 0; box-sizing:border-box; }
-        .admin-section { border:2px dashed var(--gold); padding:15px; margin-top:20px; display:none; }
-        .ritual-text { color: var(--fire); text-align: center; font-weight: bold; font-size: 18px; animation: flicker 0.2s infinite; }
-        @keyframes flicker { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-        .countdown { font-size: 50px; color: var(--gold); display: block; text-shadow: 0 0 10px var(--fire); }
-        #logo-header { width:50px; height:50px; border:1px solid var(--gold); background-size:cover; margin-right:15px; }
+        .in { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:10px 0; box-sizing:border-box; text-align:center; }
+        
+        /* Key Burn Animation */
+        .key-melt { font-size: 80px; animation: melt 3s forwards; display:block; text-align:center; }
+        @keyframes melt { 0% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:scale(0.5) translateY(40px); filter:blur(10px); } }
+        
+        .ritual-flash { color: var(--fire); text-align: center; animation: flicker 0.2s infinite; font-weight: bold; }
+        @keyframes flicker { 0%, 100% { opacity:1; } 50% { opacity:0.3; } }
     </style>
 </head>
 <body>
 
 <div class="app-shell">
+    <div id="init-view" style="display:none; text-align:center; padding-top:50px;">
+        <h2>YOU HAVE BEEN TAPPED</h2>
+        <input id="init-email" class="in" placeholder="RECRUIT EMAIL">
+        <button class="btn" onclick="submitInit()">REQUEST INITIATION</button>
+    </div>
+
+    <div id="ratify-view" style="display:none; text-align:center; padding-top:50px;">
+        <div id="burn-zone" style="display:none;"><span class="key-melt">🔑</span><br><div class="ritual-flash">BURNING KEY...</div></div>
+        <div id="ratify-form">
+            <h2>RATIFY ACCESS</h2>
+            <input id="k-in" class="in" placeholder="RITUAL-XXXX">
+            <input id="u-new" class="in" placeholder="CHOOSE USERNAME">
+            <input id="p-new" class="in" type="password" placeholder="CHOOSE PASSWORD">
+            <button class="btn" onclick="runRatify()">FINALIZE RITUAL</button>
+        </div>
+    </div>
+
     <div id="auth-view" style="text-align:center; padding-top:50px;">
-        <h2 style="letter-spacing:5px;">RITUAL ENGINE</h2>
-        <div id="status-hud" style="color:var(--warn); font-size:11px; margin-bottom:10px;">SYSTEM STANDBY</div>
-        <input id="u" class="in" placeholder="USERNAME">
+        <h2>RITUAL ENGINE</h2>
+        <div id="hud" style="color:var(--warn); font-size:11px; margin-bottom:10px;">SYSTEM STANDBY</div>
+        <input id="u" class="in" placeholder="USERNAME" autocapitalize="none">
         <input id="p" class="in" type="password" placeholder="PASSWORD">
         <button class="btn" onclick="login()">INITIALIZE TERMINAL</button>
+        <p style="font-size:10px;">RECEIVED A KEY? <span onclick="showView('ratify-view')" style="color:var(--gold); cursor:pointer;">RATIFY HERE</span></p>
     </div>
 
     <div id="arena-view" style="display:none;">
-        <div style="display:flex; align-items:center; border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:20px;">
-            <div id="logo-header"></div>
-            <div style="flex:1;"><h2 id="alliance-name" style="margin:0; font-size:18px;"></h2><small id="user-role"></small></div>
-            <button onclick="location.reload()" style="background:none; border:none; color:#444;">LOGOUT</button>
+        <div id="seal-box" class="seal-module">
+            <div class="seal-banner">
+                <h2 id="all-n" style="margin:0; font-size:18px; text-transform:uppercase;"></h2>
+                <small id="u-r" style="color:var(--gold); letter-spacing:2px;"></small>
+            </div>
         </div>
-
-        <div class="pane"><small>🏆 HALL OF FAME</small><div id="hof-box" class="display"></div></div>
-        <div class="pane"><small>🔥 ARENA CHAT</small><div id="chat-box" class="display"></div><input id="msg-in" class="in" placeholder="Transmission..."><button class="btn" onclick="sendChat()">EXECUTE</button></div>
-
-        <div id="command-center" class="admin-section">
-            <b style="color:var(--gold);">COMMAND CENTER</b>
-            <input type="file" id="raffle-file" accept=".csv, .xlsx, .xls" style="display:none;" onchange="handleRaffle(this)">
-            <button class="btn" style="background:var(--warn); color:#000; margin-top:10px;" onclick="document.getElementById('raffle-file').click()">FEED THE PHOENIX (START RITUAL)</button>
-            <button class="btn" onclick="generateInvite('MEMBER')" style="background:#1a1a1a; color:var(--gold); border:1px solid #333;">INVITE MEMBER</button>
-            <button id="officer-btn" class="btn" onclick="generateInvite('OFFICER')" style="display:none; background:#1a1a1a; color:var(--gold); border:1px solid #333;">INVITE OFFICER</button>
+        <div class="pane"><small>🏆 HALL OF FAME</small><div id="hof" class="display"></div></div>
+        <div class="pane"><small>🔥 CHAT</small><div id="chat" class="display"></div><input id="msg" class="in" placeholder="Transmit Command..."><button class="btn" onclick="sendChat()">EXECUTE</button></div>
+        
+        <div id="cmd" class="pane" style="border:2px dashed var(--gold); display:none;">
+            <b>COMMAND CENTER</b>
+            <input type="file" id="f-up" accept=".csv, .xlsx" style="display:none;" onchange="handleRaffle(this)">
+            <button class="btn" style="background:var(--warn); color:#000; margin-top:10px;" onclick="document.getElementById('f-up').click()">COMMENCE RITUAL</button>
+            <button class="btn" onclick="getTap('MEMBER')" style="background:#111; color:var(--gold); border:1px solid #333;">MEMBER TAP</button>
+            <button id="off-btn" class="btn" onclick="getTap('OFFICER')" style="display:none; background:#111; color:var(--gold); border:1px solid #333;">OFFICER TAP</button>
+            <button onclick="location.reload()" style="background:none; border:none; color:#444; width:100%;">DISCONNECT</button>
         </div>
     </div>
 </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbxB96DtgNvjM44PjjnlAPvBVmonoQMBKPByxloC90cR7VLm2-B8MDeYtrNzcUbl1xFO/exec";
-    let USER = null; let RITUAL_ON = false;
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbwcufJBeUHeaC1gN4xaJkK7dGu8gAENIsS3Fgob-zKBXNybDeBwmAtPaDF2euMYGZ8/exec";
+    let USER = null; let RITUAL = false;
+
+    window.onload = () => {
+        const p = new URLSearchParams(window.location.search);
+        if(p.has('tap')) showView('init-view');
+    };
+
+    function showView(id) {
+        ['auth-view','init-view','ratify-view','arena-view'].forEach(v => document.getElementById(v).style.display='none');
+        document.getElementById(id).style.display='block';
+    }
 
     async function login() {
-        const u = document.getElementById('u').value.trim(); const p = document.getElementById('p').value.trim();
-        const r = await fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
-        const data = await r.json();
-        if(data.status === "AUTHORIZED") {
-            USER = data; document.getElementById('auth-view').style.display = 'none'; document.getElementById('arena-view').style.display = 'block';
-            document.getElementById('alliance-name').innerText = USER.alliance; document.getElementById('user-role').innerText = USER.role;
-            if(USER.role === "OWNER" || USER.role === "OFFICER") {
-                document.getElementById('command-center').style.display = 'block';
-                if(USER.role === "OWNER") document.getElementById('officer-btn').style.display = 'block';
+        const u = document.getElementById('u').value.trim();
+        const p = document.getElementById('p').value.trim();
+        const res = await fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
+        const d = await res.json();
+        if(d.status === "AUTHORIZED") {
+            USER = d; showView('arena-view');
+            document.getElementById('all-n').innerText = USER.alliance;
+            document.getElementById('u-r').innerText = USER.role;
+            if(USER.logo) document.getElementById('seal-box').style.backgroundImage = `url('${USER.logo}')`;
+            if(USER.role !== "MEMBER") {
+                document.getElementById('cmd').style.display='block';
+                if(USER.role === "OWNER") document.getElementById('off-btn').style.display='block';
             }
             sync(); setInterval(sync, 8000);
-        }
+        } else { document.getElementById('hud').innerText = d.msg || "ACCESS DENIED"; }
     }
 
     async function sync() {
-        if(!USER || RITUAL_ON) return;
-        const r = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`);
-        const g = await r.json();
-        document.getElementById('chat-box').innerHTML = (g.chat || []).map(m => `<div><b>${m.user}:</b> ${m.text}</div>`).join('');
-        document.getElementById('hof-box').innerHTML = (g.history || []).map(h => `<div>[${h.date}] ${h.name}</div>`).join('');
+        if(!USER || RITUAL) return;
+        const res = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`);
+        const g = await res.json();
+        document.getElementById('chat').innerHTML = (g.chat || []).map(m => `<div><b>${m.user}:</b> ${m.text}</div>`).join('');
+        document.getElementById('hof').innerHTML = (g.history || []).map(h => `<div>[${h.date}] ${h.name}</div>`).join('');
+    }
+
+    async function runRatify() {
+        const k = document.getElementById('k-in').value.trim();
+        const u = document.getElementById('u-new').value.trim();
+        const p = document.getElementById('p-new').value.trim();
+        const res = await fetch(`${SCRIPT}?ratify_key=${k}&new_user=${encodeURIComponent(u)}&new_pass=${encodeURIComponent(p)}`);
+        const d = await res.json();
+        if(d.status === "SUCCESS") {
+            document.getElementById('ratify-form').style.display='none';
+            document.getElementById('burn-zone').style.display='block';
+            setTimeout(() => { alert("RATIFICATION COMPLETE. ADD TO HOME SCREEN NOW."); location.reload(); }, 3500);
+        } else { alert(d.msg); }
+    }
+
+    async function submitInit() {
+        const p = new URLSearchParams(window.location.search);
+        const e = document.getElementById('init-email').value.trim();
+        await fetch(`${SCRIPT}?initiate_email=${encodeURIComponent(e)}&from_owner=${p.get('from')}&role=${p.get('tap')}`);
+        alert("INITIATION REQUESTED. Your Key will be sent to your email.");
+        location.search = "";
+    }
+
+    function getTap(role) {
+        fetch(`${SCRIPT}?creator_key=${USER.key}&tap_role=${role}`).then(r => r.json()).then(d => {
+            if(d.status === "SUCCESS") prompt("MANUAL COPY REQUIRED. RITUAL TAP:", d.link);
+            else alert(d.msg);
+        });
     }
 
     function handleRaffle(input) {
-        const file = input.files[0]; const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-            let hat = [];
-            rows.forEach(row => { if(row[0] && row[1]) for(let i=0; i<parseInt(row[1]); i++) hat.push(row[0].toString().trim()); });
-            if(hat.length > 0) runPhoenix(hat);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+            let hat = []; rows.forEach(r => { if(r[0] && r[1]) for(let i=0; i<r[1]; i++) hat.push(r[0]); });
+            if(hat.length) startRitual(hat);
         };
-        reader.readAsArrayBuffer(file);
+        reader.readAsArrayBuffer(input.files[0]);
     }
 
-    function runPhoenix(hat) {
-        RITUAL_ON = true; const hof = document.getElementById('hof-box');
-        hof.innerHTML = "<div class='ritual-text'><br>THE PHOENIX HAS BEEN FED...</div>";
+    function startRitual(hat) {
+        RITUAL = true; const h = document.getElementById('hof');
+        h.innerHTML = "<div class='ritual-flash'><br>THE PHOENIX HAS BEEN FED...</div>";
         setTimeout(() => {
-            hof.innerHTML = "<div class='ritual-text'><br>LET THE FLAMES DECIDE</div>";
+            h.innerHTML = "<div class='ritual-flash'><br>LET THE FLAMES DECIDE</div>";
             setTimeout(() => {
-                let timer = 10;
-                const loop = setInterval(() => {
-                    const shuffleName = hat[Math.floor(Math.random() * hat.length)];
-                    hof.innerHTML = `<div style='text-align:center;'><br><span style='color:#444'>${shuffleName}</span><br><span class='countdown'>${timer}</span></div>`;
-                    timer--;
-                    if(timer < 0) {
-                        clearInterval(loop);
-                        const winner = hat[Math.floor(Math.random() * hat.length)];
-                        hof.innerHTML = `<div class='ritual-text' style='color:var(--gold)'><br>RITUAL COMPLETE<br><br><span style='font-size:22px'>${winner}</span><br>IS CHOSEN</div>`;
-                        fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(winner)}`).then(() => {
-                            setTimeout(() => { RITUAL_ON = false; sync(); }, 5000);
+                let t = 10;
+                const i = setInterval(() => {
+                    const randomName = hat[Math.floor(Math.random()*hat.length)];
+                    h.innerHTML = `<div style='text-align:center;'><br><span style='color:#444'>${randomName}</span><br><span style='font-size:40px'>${t}</span></div>`;
+                    if(t-- <= 0) {
+                        clearInterval(i); const w = hat[Math.floor(Math.random()*hat.length)];
+                        h.innerHTML = `<div class='ritual-flash' style='color:var(--gold)'><br>RITUAL COMPLETE<br><br><span style='font-size:22px'>${w}</span></div>`;
+                        fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(w)}`).then(() => {
+                            setTimeout(() => { RITUAL = false; sync(); }, 5000);
                         });
                     }
                 }, 1000);
@@ -115,22 +183,10 @@
         }, 2000);
     }
 
-    function generateInvite(role) {
-        const hud = document.getElementById('status-hud');
-        hud.innerText = "LINK NOT COPIED. STAND BY...";
-        fetch(`${SCRIPT}?creator_key=${USER.key}&invite_role=${role}`)
-            .then(r => r.json()).then(data => {
-                if(data.status === "SUCCESS") {
-                    prompt("MANUAL COPY REQUIRED. COPY KEY FOR " + role + ":", data.key);
-                    hud.innerText = "KEY READY.";
-                }
-            });
-    }
-
     async function sendChat() {
-        const m = document.getElementById('msg-in').value; if(!m) return;
+        const m = document.getElementById('msg').value; if(!m) return;
         await fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(m)}`);
-        document.getElementById('msg-in').value = ''; sync();
+        document.getElementById('msg').value = ''; sync();
     }
 </script>
 </body>
