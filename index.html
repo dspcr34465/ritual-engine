@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | V33.10 OMEGA</title>
+    <title>RITUAL ENGINE | V33.13 OMEGA</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --fire: #ff6600; }
@@ -13,7 +13,7 @@
         .pane { background:var(--panel); border:1px solid #222; padding:15px; width: 100%; max-width: 500px; box-sizing: border-box; margin-bottom: 12px; cursor: pointer; position: relative; }
         .seal-module { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--gold); background-size: cover; background-position: center; display: flex; align-items: flex-end; background-color: #050505; }
         .seal-banner { width: 100%; background: rgba(0,0,0,0.85); padding: 12px; text-align: center; border-top: 1px solid var(--gold); }
-        .av-circle { width: 60px; height: 60px; border: 1px solid var(--gold); border-radius: 50%; background-size: cover; background-position: center; background-color: #111; display: flex; align-items: center; justify-content: center; position: relative; }
+        .av-circle { width: 60px; height: 60px; border: 1px solid var(--gold); border-radius: 50%; background-size: cover; background-position: center; background-color: #111; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:16px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top: 10px; }
         .in { width:100%; background:#000; color:#fff; border:1px solid #333; padding:16px; margin:10px 0; box-sizing:border-box; text-align:center; font-family: inherit; }
         .focus-layer { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index: 2000; background: #000; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; }
@@ -38,25 +38,22 @@
         <div id="seal-box" class="seal-module" style="width:100%; max-width:500px; margin-bottom:12px;">
             <div class="seal-banner"><h2 id="all-n" style="margin:0; font-size:18px;"></h2><small id="u-r" style="letter-spacing:3px; font-weight:bold;"></small></div>
         </div>
-        
         <div class="pane" onclick="focusModule('VAULT')">
             <div style="display:flex; align-items:center; gap:15px;">
                 <div id="my-av" class="av-circle"></div>
                 <div style="flex:1;"><div id="my-name" style="font-weight:bold; color:#fff; font-size:14px;"></div><div id="my-bio-pre" style="font-size:10px; color:#666; font-style:italic;"></div></div>
             </div>
         </div>
-
         <div class="pane" onclick="focusModule('HALL-OF-FAME')"><small>🏆 RECORDS</small><div id="hof-pre" style="height:60px; overflow:hidden; font-size:10px; margin-top:5px;"></div></div>
         <div class="pane" onclick="focusModule('ARENA-CHAT')"><small>🔥 CHAT</small><div id="chat-pre" style="height:60px; overflow:hidden; font-size:11px; margin-top:5px;"></div></div>
-
         <div id="cmd" class="pane" style="display:none; border:1px solid #ff444433;">
             <b style="color:var(--fire); font-size:10px;">COMMAND CENTER</b>
             <div id="founder-panel" style="display:none; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:10px;">
                 <p style="font-size:9px; color:var(--gold);">FOUNDER PROTOCOL</p>
                 <button class="btn" onclick="focusModule('ONBOARD')">ONBOARD SUBSCRIBER</button>
-                <button class="btn" onclick="runSyncHistory()" style="background:#111; color:var(--gold); border:1px solid var(--gold);">SYNC HISTORICAL DATA</button>
+                <button class="btn" onclick="runSync()">SYNC HISTORY</button>
             </div>
-            <button class="btn" onclick="document.getElementById('logo-up').click()">BRAND ALLIANCE SEAL</button>
+            <button class="btn" onclick="document.getElementById('logo-up').click()">BRAND SEAL</button>
             <input type="file" id="logo-up" accept="image/*" style="display:none" onchange="procLogo(this)">
             <button class="btn" onclick="focusModule('RECON')">RECONCILE MEMBER</button>
             <button class="btn" onclick="document.getElementById('f-up').click()" style="background:var(--fire)">COMMENCE RITUAL</button>
@@ -66,13 +63,13 @@
     </div>
 
     <div id="focus-layer" class="focus-layer">
-        <button onclick="exitFocus()" style="color:var(--gold); background:none; border:none; margin-bottom:20px; text-align:left; font-weight:bold;">← ARENA</button>
+        <button onclick="exitFocus()" style="color:var(--gold); background:none; border:none; margin-bottom:20px; text-align:left; font-weight:bold;">← BACK</button>
         <div id="focus-body" style="flex:1; overflow-y:auto; border:1px solid #111; padding:10px;"></div>
         <div id="focus-controls"></div>
     </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbw3TcypMRSBPwVaZLqse2W_wDC1F_ge0wH52bAE6V0tAoZ1aoaMlmWgljFJeviyvvUS/exec";
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbzoGrAZt6kNuLVjgEm37YCSol2dBFnFl9KH8NOSYlW5Q1A51IkqroAfn9Vb8JmYSYBV/exec";
     let USER = null; let RITUAL = false;
 
     function apiCall(params) {
@@ -85,25 +82,44 @@
     function handleResponse(d) {
         if(d.status === "AUTHORIZED") { 
             USER = d; 
-            if(USER.subStatus === "INITIATED") {
-                document.getElementById('hud').innerHTML = `<span style="color:var(--fire)">ACCESS PENDING PAYMENT</span>`;
-                return;
-            }
+            if(USER.subStatus === "INITIATED") { showClaimScreen(); return; }
             renderArena(); 
         }
-        else if (d.chat || d.history) { updateArenaData(d); }
         else if (d.status === "SUCCESS") { 
+            if(d.msg && d.msg.includes("Throne")) location.reload();
             document.getElementById('hud').innerText = d.msg || "[ SUCCESS ]";
             exitFocus(); 
         }
-        else if (d.status === "DENIED") { document.getElementById('hud').innerText = "[ DENIED ]"; }
+        else if (d.chat || d.history) { updateArenaData(d); }
     }
 
     function login() {
         const u = document.getElementById('u').value.trim();
         const p = document.getElementById('p').value.trim();
-        document.getElementById('hud').innerText = "[ OPENING PORTAL... ]";
+        document.getElementById('hud').innerText = "[ INITIALIZING... ]";
         apiCall(`user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
+    }
+
+    function showClaimScreen() {
+        document.getElementById('auth-view').classList.remove('active');
+        const layer = document.getElementById('focus-layer');
+        const body = document.getElementById('focus-body');
+        layer.classList.add('active');
+        body.innerHTML = `
+            <div style="text-align:center; padding:20px;">
+                <h2 style="color:var(--fire)">CLAIM YOUR THRONE</h2>
+                <input id="cl-a" class="in" placeholder="ALLIANCE NAME">
+                <input id="cl-u" class="in" placeholder="NEW USERNAME">
+                <input id="cl-p" class="in" type="password" placeholder="NEW PASSWORD">
+                <button class="btn" onclick="executeClaim()">ACTIVATE NODE</button>
+            </div>`;
+    }
+
+    function executeClaim() {
+        const a = document.getElementById('cl-a').value;
+        const u = document.getElementById('cl-u').value;
+        const p = document.getElementById('cl-p').value;
+        apiCall(`claim_owner=true&key=${USER.key}&alliance=${encodeURIComponent(a)}&user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
     }
 
     function renderArena() {
@@ -112,7 +128,7 @@
         document.getElementById('all-n').innerText = USER.alliance;
         document.getElementById('u-r').innerText = USER.role;
         document.getElementById('my-name').innerText = USER.user.toUpperCase();
-        document.getElementById('my-bio-pre').innerText = USER.bio || "Write something here...";
+        document.getElementById('my-bio-pre').innerText = USER.bio || "...";
         if(USER.logo) document.getElementById('seal-box').style.backgroundImage = `url('${USER.logo}')`;
         if(USER.av) document.getElementById('my-av').style.backgroundImage = `url('${USER.av}')`;
         if(USER.role !== "MEMBER") document.getElementById('cmd').style.display='block';
@@ -131,12 +147,12 @@
         } else if(type === 'ARENA-CHAT') {
             body.innerHTML = `<div id="chat-full">${document.getElementById('chat-pre').innerHTML}</div>`;
             ctrl.innerHTML = `<input id="msg-f" class="in" placeholder="Transmit..."><button class="btn" onclick="sendChatF()">EXECUTE</button>`;
-        } else if(type === 'RECON') {
-            body.innerHTML = `<h3>MEMBER RECONCILE</h3><input id="rec-e" class="in" placeholder="EMAIL"><select id="rec-r" class="in"><option value="MEMBER">MEMBER</option><option value="OFFICER">OFFICER</option></select>`;
-            ctrl.innerHTML = `<button class="btn" onclick="runRecon()">AMEND NODE</button>`;
         } else if(type === 'ONBOARD') {
-            body.innerHTML = `<h3>ONBOARD OWNER</h3><input id="sub-e" class="in" placeholder="SUBSCRIBER EMAIL"><input id="sub-a" class="in" placeholder="ALLIANCE NAME">`;
+            body.innerHTML = `<h3>NEW SUBSCRIBER</h3><input id="sub-e" class="in" placeholder="EMAIL"><input id="sub-a" class="in" placeholder="ALLIANCE NAME">`;
             ctrl.innerHTML = `<button class="btn" onclick="runOnboard()">ISSUE OWNER KEY</button>`;
+        } else if(type === 'RECON') {
+            body.innerHTML = `<h3>RECONCILE</h3><input id="rec-e" class="in" placeholder="EMAIL"><select id="rec-r" class="in"><option value="MEMBER">MEMBER</option><option value="OFFICER">OFFICER</option></select>`;
+            ctrl.innerHTML = `<button class="btn" onclick="runRecon()">AMEND NODE</button>`;
         }
     }
 
@@ -144,7 +160,7 @@
 
     async function saveVault() {
         const b = document.getElementById('b-in').value;
-        const t = document.getElementById('focus-title'); t.innerText = "UPLOADING...";
+        const t = document.getElementById('focus-title'); t.innerText = "UPDATING...";
         await fetch(SCRIPT, { method: 'POST', body: JSON.stringify({ type: "ID", key: USER.key, bio: encodeURIComponent(b), av: USER.av }) });
         USER.bio = b; document.getElementById('my-bio-pre').innerText = b; exitFocus();
     }
@@ -173,28 +189,15 @@
         }; reader.readAsDataURL(input.files[0]);
     }
 
-    function runSyncHistory() {
-        if(confirm("Generate keys and email ALL legacy users?")) {
-            apiCall(`sync_history=true&from_owner=${USER.key}`);
-        }
-    }
-
-    function runOnboard() {
+    function runSync() { if(confirm("Sync all historical data?")) apiCall(`sync_history=true&from_owner=${USER.key}`); }
+    function runOnboard() { 
         const e = document.getElementById('sub-e').value; const a = document.getElementById('sub-a').value;
         apiCall(`initiate_email=${encodeURIComponent(e)}&alliance_name=${encodeURIComponent(a)}&from_owner=${USER.key}`);
     }
-
     function runRecon() {
         const e = document.getElementById('rec-e').value; const r = document.getElementById('rec-r').value;
         apiCall(`member_recon=true&email=${encodeURIComponent(e)}&role=${r}&from_owner=${USER.key}`);
     }
-
-    function sendChatF() {
-        const m = document.getElementById('msg-f').value; if(!m) return;
-        apiCall(`key=${USER.key}&user_name=${encodeURIComponent(USER.user)}&chat_msg=${encodeURIComponent(m)}`);
-        document.getElementById('msg-f').value = '';
-    }
-
     function updateArenaData(d) {
         const chatHtml = (d.chat || []).map(m => `<div style="margin-bottom:8px; border-left:1px solid var(--gold); padding-left:8px;"><b>${m.user}:</b><br>${m.text}</div>`).join('');
         const hofHtml = (d.history || []).map(h => `<div style="border-bottom:1px solid #111; padding:8px;">[${h.date}] ${h.name}</div>`).join('');
@@ -202,7 +205,11 @@
         if(document.getElementById('hof-pre')) document.getElementById('hof-pre').innerHTML = hofHtml;
         if(document.getElementById('chat-full')) document.getElementById('chat-full').innerHTML = chatHtml;
     }
-
+    function sendChatF() {
+        const m = document.getElementById('msg-f').value; if(!m) return;
+        apiCall(`key=${USER.key}&user_name=${encodeURIComponent(USER.user)}&chat_msg=${encodeURIComponent(m)}`);
+        document.getElementById('msg-f').value = '';
+    }
     function handleRaffle(input) {
         const reader = new FileReader(); reader.onload = (e) => {
             const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
@@ -211,7 +218,6 @@
             if(hat.length) startRitual(hat);
         }; reader.readAsArrayBuffer(input.files[0]);
     }
-
     function startRitual(hat) {
         RITUAL = true; const h = document.getElementById('hof-pre');
         h.innerHTML = "<div class='ritual-flash'><br>THE PHOENIX HAS BEEN FED...</div>";
