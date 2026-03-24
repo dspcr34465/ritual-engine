@@ -144,14 +144,38 @@
 
     function loadGist() {
         if(!USER || !USER.gistId) return;
-        fetch(`https://api.github.com/gists/${USER.gistId}?nocache=${Date.now()}`).then(r => r.json()).then(g => {
-            const content = JSON.parse(g.files[USER.gistFile].content);
-            const h = content.history || [];
-            document.getElementById('hof-box').innerHTML = h.length > 0 ? h.slice().reverse().map(i => `<div>[${i.date}] <b>${i.name}</b></div>`).join('') : "No Records Found.";
-            const chats = content.chat || [];
-            document.getElementById('chat-box').innerHTML = chats.map(m => `<div><span style="color:var(--gold)">${m.user}:</span> ${m.text}</div>`).join('') || "Welcome to the Arena.";
-            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-        });
+        fetch(`https://api.github.com/gists/${USER.gistId}?nocache=${Date.now()}`)
+            .then(r => r.json())
+            .then(g => {
+                // Safeguard against missing files
+                if (!g.files || !g.files[USER.gistFile]) return;
+                
+                const content = JSON.parse(g.files[USER.gistFile].content);
+                
+                // --- CRASH PROOFING FOR HALL OF FAME ---
+                // We check if history exists AND is an array before trying to reverse it
+                const h = content.history || [];
+                const hofBox = document.getElementById('hof-box');
+                
+                if (Array.isArray(h) && h.length > 0) {
+                    hofBox.innerHTML = h.slice().reverse().map(i => `
+                        <div><span style="color:var(--gold)">[${i.date}]</span> <b>${i.name}</b></div>
+                    `).join('');
+                } else {
+                    hofBox.innerHTML = "<div style='opacity:0.3'>No Records Found.</div>";
+                }
+                
+                // --- CHAT RENDER ---
+                const chats = content.chat || [];
+                document.getElementById('chat-box').innerHTML = chats.map(m => `
+                    <div><span style="color:var(--gold)">${m.user}:</span> ${m.text}</div>
+                `).join('') || "Connecting...";
+                
+                const chatDisplay = document.getElementById('chat-box');
+                chatDisplay.scrollTop = chatDisplay.scrollHeight;
+            })
+            .catch(err => console.log("Gist sync delayed..."));
+    }
     }
 
     function sendChat() {
