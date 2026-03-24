@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V23.7 UNIVERSAL</title>
+    <title>RITUAL ENGINE | V23.8 MASTER</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
@@ -37,9 +37,9 @@
             <div id="logo-header"></div>
             <div style="flex:1;">
                 <h2 id="alliance-name" style="margin:0; font-size:18px;"></h2>
-                <small id="user-role" style="color:#666;"></small>
+                <small id="user-role" style="color:#666; text-transform:uppercase;"></small>
             </div>
-            <button onclick="logout()" style="background:none; border:none; color:#444; cursor:pointer;">DISCONNECT</button>
+            <button onclick="logout()" style="background:none; border:none; color:#444; cursor:pointer; font-size:10px;">DISCONNECT</button>
         </div>
 
         <div class="pane">
@@ -171,7 +171,11 @@
         alert("GENERATING " + role + " INVITE KEY...");
         fetch(SCRIPT + "?creator_key=" + USER.key + "&invite_role=" + role)
             .then(r => r.json()).then(data => {
-                prompt("COPY THIS KEY FOR YOUR RECRUIT:", data.key);
+                if(data.status === "SUCCESS") {
+                    prompt("KEY GENERATED FOR " + role + ":", data.key);
+                } else {
+                    alert("Error: " + (data.msg || "Failed to generate key"));
+                }
             });
     }
 
