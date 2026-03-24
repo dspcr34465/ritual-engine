@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V23.5 SAAS</title>
+    <title>RITUAL ENGINE | V23.7 UNIVERSAL</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; min-height:100vh; overflow-x:hidden; }
@@ -65,8 +66,8 @@
             </div>
 
             <small>RAFFLE OPERATIONS</small>
-            <input type="file" id="csv-file" accept=".csv" style="display:none;" onchange="handleRaffle(this)">
-            <button class="btn" style="background:#ff4444; color:#000;" onclick="document.getElementById('csv-file').click()">UPLOAD RAFFLE CSV</button>
+            <input type="file" id="raffle-file" accept=".csv, .xlsx, .xls" style="display:none;" onchange="handleRaffle(this)">
+            <button class="btn" style="background:#ff4444; color:#000;" onclick="document.getElementById('raffle-file').click()">UPLOAD RAFFLE DATA</button>
             
             <button class="btn btn-sub" onclick="generateInvite('MEMBER')">INVITE MEMBER</button>
             <button id="officer-invite-btn" class="btn btn-sub" onclick="generateInvite('OFFICER')" style="display:none;">INVITE OFFICER</button>
@@ -101,7 +102,7 @@
     function renderUI() {
         document.getElementById('alliance-name').innerText = USER.alliance;
         document.getElementById('user-role').innerText = USER.role;
-        if(USER.logo) document.getElementById('logo-header').style.backgroundImage = `url('${USER.logo}')`;
+        if(USER.logo) document.getElementById('logo-header').style.backgroundImage = "url('" + USER.logo + "')";
 
         if(USER.role === "OWNER" || USER.role === "OFFICER") {
             document.getElementById('command-center').style.display = 'block';
@@ -114,17 +115,17 @@
 
     async function sync() {
         if(!USER) return;
-        const r = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`);
+        const r = await fetch(SCRIPT + "?get_sync=true&key=" + USER.key);
         const g = await r.json();
-        document.getElementById('chat-box').innerHTML = (g.chat || []).map(m => `<div><b>${m.user}:</b> ${m.text}</div>`).join('');
-        document.getElementById('hof-box').innerHTML = (g.history || []).map(h => `<div>[${h.date}] ${h.name}</div>`).join('') || "No Records.";
+        document.getElementById('chat-box').innerHTML = (g.chat || []).map(m => "<div><b>" + m.user + ":</b> " + m.text + "</div>").join('');
+        document.getElementById('hof-box').innerHTML = (g.history || []).map(h => "<div>[" + h.date + "] " + h.name + "</div>").join('') || "No Records.";
         const c = document.getElementById('chat-box'); c.scrollTop = c.scrollHeight;
     }
 
     async function sendChat() {
         const m = document.getElementById('msg-in').value.trim();
         if(!m) return;
-        await fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(m)}`);
+        await fetch(SCRIPT + "?key=" + USER.key + "&chat_msg=" + encodeURIComponent(m));
         document.getElementById('msg-in').value = '';
         sync();
     }
@@ -132,7 +133,7 @@
     async function updateBranding() {
         const n = document.getElementById('brand-name').value;
         const l = document.getElementById('brand-logo').value;
-        await fetch(`${SCRIPT}?update_branding=true&key=${USER.key}&new_name=${encodeURIComponent(n)}&new_logo=${encodeURIComponent(l)}`);
+        await fetch(SCRIPT + "?update_branding=true&key=" + USER.key + "&new_name=" + encodeURIComponent(n) + "&new_logo=" + encodeURIComponent(l));
         alert("Branding Saved. Refreshing Terminal...");
         location.reload();
     }
@@ -141,27 +142,34 @@
         const file = input.files[0];
         const reader = new FileReader();
         reader.onload = function(e) {
-            const lines = e.target.result.split('\n');
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, {header: 1});
+            
             let hat = [];
-            lines.forEach(line => {
-                const [name, entries] = line.split(',');
-                if(name && entries) {
-                    for(let i=0; i<parseInt(entries); i++) hat.push(name.trim());
+            rows.forEach(row => {
+                const name = row[0];
+                const entries = parseInt(row[1]);
+                if(name && !isNaN(entries)) {
+                    for(let i=0; i<entries; i++) hat.push(name.toString().trim());
                 }
             });
+
             if(hat.length > 0) {
                 const winner = hat[Math.floor(Math.random() * hat.length)];
                 if(confirm("WINNER DRAWN: " + winner + "\nLog to Hall of Fame?")) {
-                    fetch(`${SCRIPT}?key=${USER.key}&log_winner=${encodeURIComponent(winner)}`).then(sync);
+                    fetch(SCRIPT + "?key=" + USER.key + "&log_winner=" + encodeURIComponent(winner)).then(sync);
                 }
-            }
+            } else { alert("Error reading file. Ensure 1st column is Name and 2nd is Entries."); }
         };
-        reader.readAsText(file);
+        reader.readAsArrayBuffer(file);
     }
 
     function generateInvite(role) {
         alert("GENERATING " + role + " INVITE KEY...");
-        fetch(`${SCRIPT}?creator_key=${USER.key}&invite_role=${role}`)
+        fetch(SCRIPT + "?creator_key=" + USER.key + "&invite_role=" + role)
             .then(r => r.json()).then(data => {
                 prompt("COPY THIS KEY FOR YOUR RECRUIT:", data.key);
             });
