@@ -2,81 +2,150 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RITUAL ENGINE | V19.0 CORE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RITUAL ENGINE | V20.1 ADMIN</title>
     <style>
         :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --warn: #ff4444; }
-        body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:monospace; min-height:100vh; }
-        .app-shell { padding:20px; text-align:center; }
-        .btn { width:100%; max-width:300px; background:var(--gold); color:#000; border:none; padding:15px; font-weight:bold; cursor:pointer; margin-bottom:10px; }
-        .ritual-input { width:100%; max-width:280px; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:8px 0; }
-        .display { height:300px; background:#000; border:1px solid #222; overflow-y:auto; text-align:left; padding:10px; color:#fff; font-size:12px; }
-        #arena-view { display:none; }
+        body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:monospace; }
+        .app-shell { padding:15px; text-align:center; max-width:600px; margin:auto; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:16px; font-weight:bold; cursor:pointer; margin-bottom:10px; font-size:13px; text-transform:uppercase; letter-spacing:1px; }
+        .btn-sub { background:#1a1a1a; color:var(--gold); border:1px solid #333; padding:12px; font-size:11px; }
+        .btn-warn { background:var(--warn); color:#000; }
+        .in { width:100%; background:#111; color:#fff; border:1px solid #333; padding:15px; margin:10px 0; box-sizing:border-box; }
+        #chat { height:300px; background:#050505; border:1px solid #222; overflow-y:auto; text-align:left; padding:12px; margin-top:15px; font-size:13px; color:#eee; }
+        .header { border-bottom:1px solid var(--gold); padding-bottom:10px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; }
+        #admin-panel { margin-top:15px; padding:10px; border:1px dashed #444; background:#0a0a0a; }
     </style>
-    <script>
-        const SCRIPT = "https://script.google.com/macros/s/AKfycbxjcRYytKaTjRwixtYkce-_wZin97vE_k7eLXrV5a_GbTl7AcUBd-NFtpDfNSgrkkuD/exec";
-        let USER = null;
-
-        function showCredsInput() {
-            document.getElementById('gate-container').innerHTML = `
-                <h3>INITIALIZE SESSION</h3>
-                <input type="text" id="u-in" class="ritual-input" placeholder="USERNAME">
-                <input type="password" id="p-in" class="ritual-input" placeholder="PASSWORD">
-                <button class="btn" onclick="login()">CONNECT</button>
-            `;
-        }
-
-        function login() {
-            const u = document.getElementById('u-in').value;
-            const p = document.getElementById('p-in').value;
-            // FIXED: Using "no-cors" fallback logic
-            fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`)
-                .then(r => r.json())
-                .then(data => {
-                    if(data.status === "AUTHORIZED") {
-                        USER = data;
-                        document.getElementById('auth-view').style.display = 'none';
-                        document.getElementById('arena-view').style.display = 'block';
-                        document.getElementById('disp-name').innerText = USER.name;
-                        startSync();
-                    } else { alert("DENIED"); }
-                });
-        }
-
-        function startSync() {
-            setInterval(() => {
-                fetch(`${SCRIPT}?get_gist=true&key=${USER.key}`)
-                .then(r => r.json())
-                .then(g => {
-                    const c = g.chat || [];
-                    document.getElementById('chat-box').innerHTML = c.map(m => `<div>${m.user}: ${m.text}</div>`).join('');
-                });
-            }, 5000);
-        }
-
-        function sendChat() {
-            const msg = document.getElementById('chat-in').value;
-            fetch(`${SCRIPT}?key=${USER.key}&chat_msg=${encodeURIComponent(msg)}`).then(() => {
-                document.getElementById('chat-in').value = '';
-            });
-        }
-    </script>
 </head>
 <body>
-    <div class="app-shell">
-        <div id="auth-view">
-            <h2>RITUAL ENGINE</h2>
-            <div id="gate-container">
-                <button class="btn" onclick="showCredsInput()">INITIALIZE SESSION</button>
-            </div>
-        </div>
 
-        <div id="arena-view">
-            <h2 id="disp-name"></h2>
-            <div id="chat-box" class="display">Connecting...</div>
-            <input type="text" id="chat-in" class="ritual-input" placeholder="Message...">
-            <button class="btn" onclick="sendChat()">SEND</button>
+<div class="app-shell">
+    <div id="auth">
+        <h2 style="letter-spacing:4px;">RITUAL ENGINE</h2>
+        <div id="status" style="color:var(--warn); font-size:11px; margin-bottom:10px;"></div>
+        <div id="inputs">
+            <button class="btn" onclick="showLogin()">INITIALIZE SESSION</button>
         </div>
     </div>
+
+    <div id="arena" style="display:none;">
+        <div class="header">
+            <div style="text-align:left;">
+                <h3 id="u-name" style="margin:0;"></h3>
+                <small id="u-role" style="color:#666; text-transform:uppercase;"></small>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:#444; font-size:10px;">DISCONNECT</button>
+        </div>
+        
+        <div id="chat">Connecting to Node...</div>
+        <input type="text" id="msg" class="in" placeholder="Transmission...">
+        <button class="btn" onclick="send()">EXECUTE</button>
+
+        <div id="admin-panel" style="display:none;">
+            <small style="display:block; margin-bottom:10px; color:#666;">ALLIANCE COMMAND</small>
+            <div id="admin-buttons"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // URL CONSTRUCTOR
+    var b1 = "https://script.google.com/macros/s/";
+    var b2 = "AKfycbxjcRYytKaTjRwixtYkce-_wZin97vE_k7eLXrV5a_GbTl7AcUBd-NFtpDfNSgrkkuD";
+    var b3 = "/exec";
+    var SCRIPT = b1 + b2 + b3;
+    var USER = null;
+
+    function showLogin() {
+        document.getElementById("inputs").innerHTML = 
+            '<input id="user" class="in" placeholder="USERNAME" autocapitalize="none">' +
+            '<input id="pass" class="in" type="password" placeholder="PASSWORD">' +
+            '<button class="btn" onclick="connect()">CONNECT</button>';
+    }
+
+    function connect() {
+        var u = document.getElementById("user").value.trim();
+        var p = document.getElementById("pass").value.trim();
+        if(!u || !p) return;
+        document.getElementById("status").innerText = "LINKING...";
+        
+        fetch(SCRIPT + "?user=" + encodeURIComponent(u) + "&pass=" + encodeURIComponent(p))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if(data.status === "AUTHORIZED") {
+                USER = data;
+                localStorage.setItem("ritual_user", JSON.stringify(data));
+                sessionStorage.setItem("active_session", "true");
+                launchArena();
+            } else { 
+                document.getElementById("status").innerText = "ACCESS DENIED"; 
+            }
+        });
+    }
+
+    function launchArena() {
+        document.getElementById("auth").style.display = "none";
+        document.getElementById("arena").style.display = "block";
+        document.getElementById("u-name").innerText = USER.name;
+        document.getElementById("u-role").innerText = USER.role;
+
+        // --- UPDATED ADMIN LOGIC (V20.1) ---
+        var role = USER.role ? USER.role.toUpperCase() : "MEMBER";
+        var adminPanel = document.getElementById("admin-panel");
+        var adminBtns = document.getElementById("admin-buttons");
+
+        if (role === "OWNER" || role === "OFFICER") {
+            adminPanel.style.display = "block";
+            var html = '<button class="btn btn-sub" onclick="copyInvite(\'MEMBER\')">INVITE MEMBER</button>';
+            if (role === "OWNER") {
+                html += '<button class="btn btn-sub" onclick="copyInvite(\'OFFICER\')">INVITE OFFICER</button>';
+            }
+            html += '<button class="btn btn-warn" onclick="alert(\'RITUAL ENGAGED\')" style="margin-top:10px;">START RITUAL</button>';
+            adminBtns.innerHTML = html;
+        }
+
+        sync();
+        setInterval(sync, 8000);
+    }
+
+    function sync() {
+        if(!USER) return;
+        fetch(SCRIPT + "?get_gist=true&key=" + USER.key)
+        .then(function(r) { return r.json(); })
+        .then(function(g) {
+            var c = g.chat || [];
+            document.getElementById("chat").innerHTML = c.map(function(m) {
+                return "<div><b style='color:#d4af37'>" + m.user + ":</b> " + m.text + "</div>";
+            }).join("");
+            var box = document.getElementById("chat");
+            box.scrollTop = box.scrollHeight;
+        });
+    }
+
+    function send() {
+        var m = document.getElementById("msg").value;
+        if(!m) return;
+        fetch(SCRIPT + "?key=" + USER.key + "&chat_msg=" + encodeURIComponent(m)).then(function() {
+            document.getElementById("msg").value = "";
+            sync();
+        });
+    }
+
+    function copyInvite(type) {
+        var link = window.location.origin + window.location.pathname + "?invite=" + type;
+        navigator.clipboard.writeText(link);
+        alert("INVITE LINK COPIED: " + type);
+    }
+
+    function logout() { localStorage.clear(); sessionStorage.clear(); location.reload(); }
+
+    window.onload = function() {
+        var saved = localStorage.getItem("ritual_user");
+        if(saved && sessionStorage.getItem("active_session")) {
+            USER = JSON.parse(saved);
+            launchArena();
+        }
+    };
+</script>
 </body>
 </html>
