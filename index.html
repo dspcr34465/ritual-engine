@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | V33.81 COMPLETE</title>
+    <title>RITUAL | V33.83 OMEGA</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --fire: #ff6600; --bg: #000; --panel: #0a0a0a; --led-green: #00ff41; --led-red: #ff0000; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
 
+        /* DECK WRAPPER */
         .deck-wrapper { display: flex; width: 400vw; height: 100vh; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .deck-wrapper.snapping { scroll-snap-type: x mandatory; }
         .deck-wrapper::-webkit-scrollbar { display: none; }
+
         .module-slide { width: 100vw; height: 100vh; scroll-snap-align: start; flex-shrink: 0; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; }
         .module-card { background: var(--panel); border: 2px solid #1a1a1a; border-radius: 15px; flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; box-shadow: 0 0 40px #000 inset; position: relative; }
 
@@ -45,15 +47,18 @@
             <div class="module-slide"><h2>Hall of Fame</h2><div class="module-card" id="hof-content">SYNCING RECORDS...</div></div>
             <div class="module-slide"><h2>Alliance</h2><div class="module-card" id="profile-list">SYNCING NODES...</div></div>
             <div class="module-slide" id="slide-cmd">
-                <h2>Command</h2>
+                <h2 id="cmd-title">COMMAND CENTER</h2>
                 <div class="module-card" style="text-align:center;">
-                    <div id="my-name" style="font-size: 28px; margin-bottom: 20px;">COMMANDER</div>
-                    <button class="btn" onclick="genInvite('MEMBER')">SHARE MEMBER LINK</button>
-                    <button id="off-btn" class="btn" onclick="genInvite('OFFICER')" style="display:none; color:var(--fire)">SHARE OFFICER LINK</button>
+                    <div id="my-name" style="font-size: 32px; margin-bottom: 10px; color:#fff;">COMMANDER</div>
+                    <div id="my-role" style="font-size: 14px; letter-spacing: 4px; margin-bottom: 30px; color:var(--fire);">ROLE</div>
+                    
+                    <button id="invite-btn" class="btn" onclick="genInvite('MEMBER')">SHARE MEMBER LINK</button>
+                    
                     <div id="founder-tools" style="display:none; border-top:2px solid var(--fire); margin-top:30px; padding-top:20px;">
                         <button class="btn" onclick="document.getElementById('f-up').click()" style="background:var(--fire)">FEED PHOENIX</button>
                         <input type="file" id="f-up" accept=".xlsx,.csv" style="display:none" onchange="handleRaffle(this)">
                     </div>
+                    
                     <button class="btn" onclick="location.reload()" style="background:#111; color:#333; margin-top:50px;">DISCONNECT</button>
                 </div>
             </div>
@@ -62,21 +67,20 @@
     </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbyjPALbV7z17-mdJPm_7ytp2X8Y1BZSH7TB5A4CZiNxPAGqPlOHpDe3qXk5CKehfzmQ/exec";
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbyOWWL7fYOmIMaWf1K4F1mWwSid8z0yfsMlya7TV1BMaj-wfGoKgz2qJVqPvGQiBeAH/exec";
     let USER = null;
 
     async function login() {
-        const uInput = document.getElementById('u').value.trim();
-        const pInput = document.getElementById('p').value.trim();
-        if(!uInput || !pInput) return;
+        const u = document.getElementById('u').value.trim();
+        const p = document.getElementById('p').value.trim();
+        if(!u || !p) return;
         document.getElementById('hud').innerText = "[ INITIALIZING... ]";
         
         try {
-            const resp = await fetch(`${SCRIPT}?user=${encodeURIComponent(uInput)}&pass=${encodeURIComponent(pInput)}`, { 
+            const resp = await fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`, { 
                 redirect: 'follow', mode: 'cors', credentials: 'omit' 
             });
-            const data = await resp.json();
-            const d = typeof data === 'string' ? JSON.parse(data) : data;
+            const d = await resp.json();
 
             if(d.status === "AUTHORIZED") {
                 USER = d;
@@ -89,17 +93,20 @@
                 arena.style.opacity = '1';
                 
                 setTimeout(() => {
-                    const jump = (USER.role === "MEMBER") ? 0 : (window.innerWidth * 3);
-                    deck.scrollTo({left: jump, behavior: 'auto'});
+                    // COMMAND-FIRST: Everyone starts on Slide 4 (Command/Node)
+                    deck.scrollTo({left: (window.innerWidth * 3), behavior: 'auto'});
                     
                     setTimeout(() => {
                         deck.classList.add('snapping');
                         updateLEDs();
                         triggerSync();
-                    }, 100);
+                    }, 50);
 
                     document.getElementById('my-name').innerText = USER.user.toUpperCase();
-                    if(USER.role !== "MEMBER") document.getElementById('off-btn').style.display = 'block';
+                    document.getElementById('my-role').innerText = USER.role.toUpperCase();
+                    document.getElementById('cmd-title').innerText = (USER.role === "MEMBER") ? "NODE STATION" : "COMMAND CENTER";
+                    
+                    if(USER.role === "MEMBER") document.getElementById('invite-btn').style.display = 'none';
                     if(USER.isFounder) document.getElementById('founder-tools').style.display = 'block';
                 }, 150);
 
@@ -108,7 +115,7 @@
             } else {
                 document.getElementById('hud').innerText = "[ REJECTED ]";
             }
-        } catch(e) { document.getElementById('hud').innerText = "[ HANDSHAKE ERROR ]"; }
+        } catch(e) { document.getElementById('hud').innerText = "[ CONNECTION ERROR ]"; }
     }
 
     async function triggerSync() {
@@ -117,17 +124,14 @@
             const resp = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`, { 
                 redirect: 'follow', mode: 'cors', credentials: 'omit'
             });
-            const data = await resp.json();
-            const d = typeof data === 'string' ? JSON.parse(data) : data;
+            const d = await resp.json();
             if(d.status === "SYNC_OK") updateData(d);
         } catch(e) {}
     }
 
     function updateLEDs() {
-        const deck = document.getElementById('main-deck');
-        const index = Math.round(deck.scrollLeft / window.innerWidth);
-        const leds = document.querySelectorAll('.led');
-        leds.forEach((l, i) => l.className = i === index ? 'led active' : 'led');
+        const index = Math.round(document.getElementById('main-deck').scrollLeft / window.innerWidth);
+        document.querySelectorAll('.led').forEach((l, i) => l.className = i === index ? 'led active' : 'led');
     }
 
     function updateData(d) {
