@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | V33.74 OMEGA</title>
+    <title>RITUAL | V33.75 TITAN</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --fire: #ff6600; --bg: #000; --panel: #0a0a0a; --led-green: #00ff41; --led-red: #ff0000; }
@@ -14,7 +14,7 @@
         .deck-wrapper::-webkit-scrollbar { display: none; }
 
         .module-slide { width: 100vw; height: 100vh; scroll-snap-align: start; flex-shrink: 0; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; }
-        .module-card { background: var(--panel); border: 2px solid #1a1a1a; border-radius: 15px; flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; box-shadow: 0 0 40px #000 inset; }
+        .module-card { background: var(--panel); border: 3px solid #1a1a1a; border-radius: 15px; flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; box-shadow: 0 0 40px #000 inset; position: relative; }
 
         h2 { text-transform: uppercase; letter-spacing: 5px; font-size: 28px; text-align: center; margin-bottom: 25px; color: var(--gold); }
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:25px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top: 15px; font-size: 18px; border-radius: 10px; }
@@ -25,11 +25,7 @@
         .led.active { background: var(--led-red) !important; box-shadow: 0 0 20px var(--led-red) !important; }
         
         #arena-view { display: none; opacity: 0; transition: opacity 0.5s; }
-        .row { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; color: #fff; }
-
-        @media (orientation: portrait) {
-            #slide-hof .module-card { width: 100vh; height: 100vw; transform: rotate(90deg); transform-origin: center center; position: fixed; top: 50%; left: 50%; translate: -50% -50%; }
-        }
+        .row-item { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; color: #fff; }
     </style>
 </head>
 <body>
@@ -53,13 +49,7 @@
                 <h2>Command</h2>
                 <div class="module-card" style="text-align:center;">
                     <div id="my-name" style="font-size: 28px; margin-bottom: 20px;">COMMANDER</div>
-                    <button class="btn" onclick="genInvite('MEMBER')">SHARE MEMBER LINK</button>
-                    <button id="off-btn" class="btn" onclick="genInvite('OFFICER')" style="display:none; color:var(--fire)">SHARE OFFICER LINK</button>
-                    <div id="founder-tools" style="display:none; border-top:2px solid var(--fire); margin-top:30px; padding-top:20px;">
-                        <button class="btn" onclick="document.getElementById('f-up').click()" style="background:var(--fire)">FEED PHOENIX</button>
-                        <input type="file" id="f-up" accept=".xlsx,.csv" style="display:none" onchange="handleRaffle(this)">
-                    </div>
-                    <button class="btn" onclick="location.reload()" style="background:#111; color:#333; margin-top:50px;">DISCONNECT</button>
+                    <button class="btn" onclick="location.reload()">DISCONNECT</button>
                 </div>
             </div>
         </div>
@@ -67,7 +57,7 @@
     </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbz2gnYQhc1wh-zxe1K-J28_GEEjfnU9M5YXBIyc-O2fFJ9iffweTHaPwaY9pe6tSZjB/exec";
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbwRomanXh9dPklgLvwdfirbXSMYuXOzlngPPhvvUvRd8TqLRfyS8osc7j0_WAOU5dIQ/exec";
     let USER = null;
 
     async function login() {
@@ -86,6 +76,8 @@
                 arena.offsetHeight;
                 document.getElementById('auth-view').style.display = 'none';
                 arena.style.opacity = '1';
+                
+                // FORCE JUMP LOGIC
                 setTimeout(() => {
                     const jump = (USER.role === "MEMBER") ? 0 : (window.innerWidth * 3);
                     deck.scrollTo({left: jump, behavior: 'auto'});
@@ -93,15 +85,13 @@
                         deck.classList.add('snapping');
                         updateLEDs();
                         triggerSync();
-                    }, 50);
+                    }, 100);
                     document.getElementById('my-name').innerText = USER.user.toUpperCase();
-                    if(USER.role !== "MEMBER") document.getElementById('off-btn').style.display = 'block';
-                    if(USER.isFounder) document.getElementById('founder-tools').style.display = 'block';
                 }, 150);
                 setInterval(triggerSync, 8000);
                 deck.onscroll = updateLEDs;
             } else { document.getElementById('hud').innerText = "[ REJECTED ]"; }
-        } catch(e) { document.getElementById('hud').innerText = "[ SANDBOX BLOCKED ]"; }
+        } catch(e) { document.getElementById('hud').innerText = "[ CONNECTION ERROR ]"; }
     }
 
     async function triggerSync() {
@@ -120,26 +110,9 @@
 
     function updateData(d) {
         if(d.history) {
-            document.getElementById('chat-content').innerHTML = d.history.map(h => `<div class="row"><b>${h.name}</b> [${h.date}] <br> Signal Established.</div>`).join('');
-            document.getElementById('hof-content').innerHTML = d.history.map(h => `<div class="row"><b>${h.name}</b> Record Logged.</div>`).join('');
+            document.getElementById('chat-content').innerHTML = d.history.map(h => `<div class="row-item"><b>${h.name}</b> [${h.date}] <br> Signal Established.</div>`).join('');
+            document.getElementById('hof-content').innerHTML = d.history.map(h => `<div class="row-item"><b>${h.name}</b> Record Logged.</div>`).join('');
         }
-    }
-
-    function genInvite(role) {
-        const link = `${window.location.href.split('?')[0]}?invite=true&role=${role}&alliance=${encodeURIComponent(USER.alliance)}`;
-        navigator.clipboard.writeText(link).then(() => { alert('Link Copied!'); });
-    }
-
-    function handleRaffle(input) {
-        const reader = new FileReader(); reader.onload = (e) => {
-            const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
-            let hat = []; rows.forEach(r => { if(r[0] && r[1]) for(let i=0; i<r[1]; i++) hat.push(r[0]); });
-            if(hat.length) {
-                fetch(`${SCRIPT}?broadcast_ritual=true&hat=${encodeURIComponent(JSON.stringify(hat))}&from_owner=${USER.key}`, { redirect: 'follow', mode: 'cors', credentials: 'omit' })
-                .then(() => alert('Ritual Broadcasted.'));
-            }
-        }; reader.readAsArrayBuffer(input.files[0]);
     }
 </script>
 </body>
