@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | V33.57 COMMAND</title>
+    <title>RITUAL | V33.58 COMMAND</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --fire: #ff6600; --bg: #000; --panel: #0a0a0a; --led-green: #00ff41; --led-red: #ff0000; }
@@ -22,11 +22,7 @@
         .led { width: 16px; height: 16px; border-radius: 50%; background: var(--led-green); box-shadow: 0 0 10px var(--led-green); transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); }
         .led.active { background: var(--led-red) !important; box-shadow: 0 0 20px var(--led-red) !important; }
 
-        #ritual-overlay { position: fixed; width: 100vw; height: 100vh; background:#000; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; border: 4px solid var(--fire); }
-        
-        @media (orientation: portrait) {
-            #slide-hof .module-card { width: 100vh; height: 100vw; transform: rotate(90deg); transform-origin: center center; position: fixed; top: 50%; left: 50%; translate: -50% -50%; }
-        }
+        #arena-view { display: none; opacity: 0; transition: opacity 0.5s; }
     </style>
 </head>
 <body>
@@ -41,9 +37,9 @@
         </div>
     </div>
 
-    <div id="arena-view" style="display:none;">
+    <div id="arena-view">
         <div class="deck-wrapper" id="main-deck">
-            <div class="module-slide"><h2>Arena Chat</h2><div class="module-card" id="chat-content">ESTABLISHING LINK...</div></div>
+            <div class="module-slide"><h2>Arena Chat</h2><div class="module-card" id="chat-content">LINK ESTABLISHED. SYNCING...</div></div>
             <div class="module-slide"><h2>Hall of Fame</h2><div class="module-card" id="hof-content">SYNCING RECORDS...</div></div>
             <div class="module-slide"><h2>Alliance</h2><div class="module-card" id="profile-list">SYNCING NODES...</div></div>
             <div class="module-slide" id="slide-cmd">
@@ -73,16 +69,28 @@
 
             if(d.status === "AUTHORIZED") {
                 USER = d;
-                document.getElementById('auth-view').style.display = 'none';
-                document.getElementById('arena-view').style.display = 'block';
                 
+                // STEP 1: Turn on the Arena but keep it invisible
+                const arena = document.getElementById('arena-view');
+                arena.style.display = 'block';
+                
+                // STEP 2: Force the browser to calculate the UI width
+                arena.offsetHeight; 
+
+                // STEP 3: Remove the login screen and show the Arena
+                document.getElementById('auth-view').style.display = 'none';
+                arena.style.opacity = '1';
+                
+                // STEP 4: Snap to role
                 setTimeout(() => {
                     const deck = document.getElementById('main-deck');
-                    deck.scrollLeft = (USER.role === "MEMBER") ? 0 : (window.innerWidth * 3);
+                    const jump = (USER.role === "MEMBER") ? 0 : (window.innerWidth * 3);
+                    deck.scrollTo({left: jump, behavior: 'instant'});
                     document.getElementById('my-name').innerText = USER.user.toUpperCase();
                     updateLEDs();
-                }, 600);
+                }, 50);
 
+                // START SYNC
                 setInterval(async () => {
                     try {
                         const syncResp = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`, { redirect: 'follow' });
@@ -101,7 +109,8 @@
     function updateLEDs() {
         const deck = document.getElementById('main-deck');
         const index = Math.round(deck.scrollLeft / window.innerWidth);
-        document.querySelectorAll('.led').forEach((l, i) => l.className = i === index ? 'led active' : 'led');
+        const leds = document.querySelectorAll('.led');
+        leds.forEach((l, i) => l.className = i === index ? 'led active' : 'led');
     }
 
     function updateData(d) {
