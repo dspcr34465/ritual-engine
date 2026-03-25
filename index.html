@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | OMEGA V33.37</title>
+    <title>RITUAL | V33.38 FOUNDATION</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --fire: #ff6600; --bg: #000; --panel: #0a0a0a; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
 
-        /* SNAP-DECK: 50-INCH & MOBILE OPTIMIZED */
+        /* SNAP MODULES */
         .deck-wrapper { display: flex; width: 400vw; height: 100vh; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .deck-wrapper::-webkit-scrollbar { display: none; }
         .module-slide { width: 100vw; height: 100vh; scroll-snap-align: start; flex-shrink: 0; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
-        .module-card { background: var(--panel); border: 3px solid #1a1a1a; border-radius: 12px; flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; box-shadow: 0 0 30px #000 inset; position: relative; }
+        .module-card { background: var(--panel); border: 2px solid #1a1a1a; border-radius: 12px; flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
 
-        h2 { text-transform: uppercase; letter-spacing: 5px; font-size: 28px; text-align: center; margin-bottom: 25px; text-shadow: 3px 3px 5px #000; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:25px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top: 15px; font-size: 20px; border-radius: 10px; }
-        .in { width:100%; background:#111; color:#fff; border:2px solid #333; padding:25px; margin:10px 0; box-sizing:border-box; text-align:center; font-size: 22px; border-radius: 10px; }
+        h2 { text-transform: uppercase; letter-spacing: 5px; font-size: 24px; text-align: center; margin-bottom: 20px; }
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:20px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top: 15px; font-size: 18px; border-radius: 8px; }
+        .in { width:100%; background:#111; color:#fff; border:1px solid #333; padding:18px; margin:10px 0; box-sizing:border-box; text-align:center; font-size: 18px; border-radius: 8px; }
 
-        /* LANDSCAPE FORCE (HALL OF FAME & RITUAL) */
+        /* LANDSCAPE FORCE (HOF & RITUAL) */
         @media (orientation: portrait) {
             #slide-hof .module-card, #ritual-overlay { 
                 width: 100vh; height: 100vw; transform: rotate(90deg); 
@@ -30,19 +30,16 @@
         }
 
         #ritual-overlay { position: fixed; width: 100vw; height: 100vh; background:#000; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; border: 4px solid var(--fire); }
-        .ritual-flash { color: var(--fire); font-size: 50px; animation: flicker 0.2s infinite; text-align: center; font-weight: bold; }
-        @keyframes flicker { 0%, 100% { opacity:1; } 50% { opacity:0.3; } }
-        
-        .nav-indicator { position: fixed; bottom: 30px; width: 100%; display: center; justify-content: center; gap: 15px; z-index: 1000; pointer-events: none; }
-        .dot { width: 14px; height: 14px; border-radius: 50%; background: #222; transition: 0.3s; }
-        .dot.active { background: var(--gold); box-shadow: 0 0 15px var(--gold); }
+        .nav-indicator { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 10px; z-index: 1000; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #222; }
+        .dot.active { background: var(--gold); }
     </style>
 </head>
 <body>
 
     <div id="auth-view" style="position:fixed; width:100%; height:100%; z-index:9000; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-        <h1 id="main-title" style="font-size: 60px; color: var(--gold); letter-spacing: 15px;">RITUAL</h1>
-        <div id="auth-form" style="width: 90%; max-width: 450px;">
+        <h1 id="main-title" style="font-size: 50px; color: var(--gold); letter-spacing: 15px;">RITUAL</h1>
+        <div id="auth-form" style="width: 90%; max-width: 400px;">
             <input id="u" class="in" placeholder="IDENTITY" autocapitalize="none">
             <input id="p" class="in" type="password" placeholder="PASSKEY">
             <button class="btn" onclick="login()">INITIALIZE</button>
@@ -52,20 +49,20 @@
 
     <div id="arena-view" style="display:none;">
         <div class="deck-wrapper" id="main-deck">
-            <div class="module-slide"><h2>Broadcast</h2><div class="module-card" id="chat-content"></div></div>
-            <div class="module-slide" id="slide-hof"><h2>Hall of Fame</h2><div class="module-card" id="hof-content"></div></div>
-            <div class="module-slide"><h2>Alliance</h2><div class="module-card" id="profile-list"></div></div>
+            <div class="module-slide"><h2>Broadcast</h2><div class="module-card" id="chat-content">CONNECTION ESTABLISHED. STANDBY FOR DATA...</div></div>
+            <div class="module-slide" id="slide-hof"><h2>Hall of Fame</h2><div class="module-card" id="hof-content">HISTORICAL DATA SYNCING...</div></div>
+            <div class="module-slide"><h2>Alliance</h2><div class="module-card" id="profile-list">MEMBERS LIST LOADING...</div></div>
             <div class="module-slide">
                 <h2>Command</h2>
-                <div class="module-card">
-                    <div id="my-av" style="width:140px; height:140px; margin:0 auto 20px; border:3px solid var(--gold); border-radius:50%; background-size:cover;"></div>
+                <div class="module-card" style="text-align:center;">
+                    <h3 id="my-name">COMMANDER</h3>
                     <button class="btn" onclick="genInvite('MEMBER')">SHARE MEMBER LINK</button>
                     <button id="off-btn" class="btn" onclick="genInvite('OFFICER')" style="display:none; color:var(--fire)">SHARE OFFICER LINK</button>
-                    <div id="founder-tools" style="display:none; border-top:2px solid var(--fire); margin-top:30px; padding-top:20px;">
+                    <div id="founder-tools" style="display:none; border-top:1px solid var(--fire); margin-top:20px; padding-top:20px;">
                         <button class="btn" onclick="document.getElementById('f-up').click()" style="background:var(--fire)">FEED PHOENIX</button>
                         <input type="file" id="f-up" accept=".xlsx,.csv" style="display:none" onchange="handleRaffle(this)">
                     </div>
-                    <button class="btn" onclick="location.reload()" style="background:#111; color:#333; margin-top:50px;">DISCONNECT</button>
+                    <button class="btn" onclick="location.reload()" style="background:#111; color:#333; margin-top:30px;">DISCONNECT</button>
                 </div>
             </div>
         </div>
@@ -75,7 +72,7 @@
     <div id="ritual-overlay"><div id="ritual-body"></div></div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbz_K-K4cg5thBX1LM8io8IKhUzoKFK7rZSEzer4XE-Y5mEpV11LHtZ4JM6SkO9wN3tN/exec";
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbzXlXk9O-kbCLpwJAJZ9sQhxzBVlvjkkvt5lhTUBfomYYWeIOeNIT076dfIMvz7FXch/exec";
     let USER = null; let RITUAL_ACTIVE = false;
 
     async function ritualRequest(params) {
@@ -96,24 +93,7 @@
         }
         else if(d.status === "SUCCESS") { location.reload(); }
         else if(d.isRitualRunning && !RITUAL_ACTIVE) { startRemoteRitual(JSON.parse(d.ritualHat)); }
-        else if(d.history) { updateData(d); }
-    }
-
-    function showClaimScreen() {
-        document.getElementById('main-title').innerText = "ACTIVATE";
-        document.getElementById('auth-form').innerHTML = `
-            <h2 style="color:var(--gold); font-size:24px;">CLAIM YOUR THRONE</h2>
-            <input id="cl-a" class="in" placeholder="ALLIANCE NAME">
-            <input id="cl-u" class="in" placeholder="NEW USERNAME">
-            <input id="cl-p" class="in" type="password" placeholder="NEW PASSWORD">
-            <button class="btn" onclick="submitClaim()">ACTIVATE NODE</button>`;
-    }
-
-    function submitClaim() {
-        const a = document.getElementById('cl-a').value;
-        const u = document.getElementById('cl-u').value;
-        const p = document.getElementById('cl-p').value;
-        ritualRequest(`claim_owner=true&key=${USER.key}&alliance=${encodeURIComponent(a)}&user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
+        else if(d.history || d.winners) { updateData(d); }
     }
 
     function login() {
@@ -121,7 +101,7 @@
     }
 
     function renderArena() {
-        if(USER.av) document.getElementById('my-av').style.backgroundImage = `url('${USER.av}')`;
+        document.getElementById('my-name').innerText = USER.user.toUpperCase();
         if(USER.role !== "MEMBER") document.getElementById('off-btn').style.display = 'block';
         if(USER.isFounder) document.getElementById('founder-tools').style.display = 'block';
         setInterval(() => { if(!RITUAL_ACTIVE) ritualRequest(`get_sync=true&key=${USER.key}`); }, 8000);
@@ -132,43 +112,10 @@
         };
     }
 
-    function genInvite(role) {
-        const link = `${window.location.href.split('?')[0]}?invite=true&role=${role}&alliance=${encodeURIComponent(USER.alliance)}`;
-        navigator.clipboard.writeText(link).then(() => { alert('Link Copied!'); });
-    }
-
-    function handleRaffle(input) {
-        const reader = new FileReader(); reader.onload = (e) => {
-            const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
-            let hat = []; rows.forEach(r => { if(r[0] && r[1]) for(let i=0; i<r[1]; i++) hat.push(r[0]); });
-            if(hat.length) {
-                ritualRequest(`broadcast_ritual=true&hat=${encodeURIComponent(JSON.stringify(hat))}&from_owner=${USER.key}`);
-                startRemoteRitual(hat);
-            }
-        }; reader.readAsArrayBuffer(input.files[0]);
-    }
-
-    function startRemoteRitual(hat) {
-        RITUAL_ACTIVE = true;
-        document.getElementById('main-deck').scrollTo({left: window.innerWidth, behavior: 'smooth'});
-        const overlay = document.getElementById('ritual-overlay');
-        overlay.style.display = 'flex';
-        let t = 10;
-        const i = setInterval(() => {
-            const n = hat[Math.floor(Math.random()*hat.length)];
-            document.getElementById('ritual-body').innerHTML = `<h1 style="font-size:45px; color:#222;">${n}</h1><div style="font-size:160px; color:var(--gold);">${t}</div>`;
-            if(t-- <= 0) {
-                clearInterval(i);
-                const w = hat[Math.floor(Math.random()*hat.length)];
-                document.getElementById('ritual-body').innerHTML = `<div class="ritual-flash">WINNER CHOSEN</div><h1 style="font-size:70px; margin-top:20px; border:2px solid var(--gold); padding:20px;">${w}</h1>`;
-                setTimeout(() => { overlay.style.display='none'; RITUAL_ACTIVE=false; }, 7000);
-            }
-        }, 1000);
-    }
-
     function updateData(d) {
-        document.getElementById('hof-content').innerHTML = (d.history || []).map(h => `<div style="padding:15px; border-bottom:1px solid #222;">[${h.date}] <b>${h.name}</b></div>`).join('');
+        if(d.history) {
+            document.getElementById('hof-content').innerHTML = d.history.map(h => `<div style="padding:10px; border-bottom:1px solid #222;">[${h.date}] <b>${h.name}</b></div>`).join('');
+        }
     }
 </script>
 </body>
