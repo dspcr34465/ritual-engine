@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | V33.84 OMEGA</title>
+    <title>RITUAL | V33.85 OMEGA</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --fire: #ff6600; --bg: #000; --panel: #0a0a0a; --led-green: #00ff41; --led-red: #ff0000; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
 
+        /* DECK WRAPPER */
         .deck-wrapper { display: flex; width: 400vw; height: 100vh; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .deck-wrapper.snapping { scroll-snap-type: x mandatory; }
         .deck-wrapper::-webkit-scrollbar { display: none; }
@@ -85,6 +86,7 @@
                 document.getElementById('auth-view').style.display = 'none';
                 arena.style.opacity = '1';
                 setTimeout(() => {
+                    // Everyone lands on Slide 4 (Command Center)
                     deck.scrollTo({left: (window.innerWidth * 3), behavior: 'auto'});
                     setTimeout(() => {
                         deck.classList.add('snapping');
@@ -94,4 +96,58 @@
                     document.getElementById('my-name').innerText = USER.user.toUpperCase();
                     document.getElementById('my-role').innerText = USER.role.toUpperCase();
                     document.getElementById('cmd-title').innerText = (USER.role === "MEMBER") ? "NODE STATION" : "COMMAND CENTER";
-                    if(USER.role === "MEMBER") document.getElementById('invite-btn').style.display = '
+                    if(USER.role === "MEMBER") document.getElementById('invite-btn').style.display = 'none';
+                    if(USER.isFounder) document.getElementById('founder-tools').style.display = 'block';
+                }, 150);
+                setInterval(triggerSync, 8000);
+                deck.onscroll = updateLEDs;
+            } else { document.getElementById('hud').innerText = "[ REJECTED ]"; }
+        } catch(e) { document.getElementById('hud').innerText = "[ CONNECTION ERROR ]"; }
+    }
+
+    async function triggerSync() {
+        if(!USER) return;
+        try {
+            const resp = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`, { 
+                redirect: 'follow', mode: 'cors', credentials: 'omit'
+            });
+            const d = await resp.json();
+            if(d.status === "SYNC_OK") updateData(d);
+        } catch(e) {}
+    }
+
+    function updateLEDs() {
+        const deck = document.getElementById('main-deck');
+        const index = Math.round(deck.scrollLeft / window.innerWidth);
+        const leds = document.querySelectorAll('.led');
+        leds.forEach((l, i) => l.className = i === index ? 'led active' : 'led');
+    }
+
+    function updateData(d) {
+        if(d.history) {
+            document.getElementById('chat-content').innerHTML = d.history.map(h => `<div class="row-item"><b>${h.name}</b> [${h.date}] <br> Signal Established.</div>`).join('');
+            document.getElementById('hof-content').innerHTML = d.history.map(h => `<div class="row-item"><b>${h.name}</b> Record Logged.</div>`).join('');
+        }
+    }
+
+    function genInvite(role) {
+        const link = `${window.location.href.split('?')[0]}?invite=true&role=${role}&alliance=${encodeURIComponent(USER.alliance)}`;
+        navigator.clipboard.writeText(link).then(() => { alert('Link Copied!'); });
+    }
+
+    function handleRaffle(input) {
+        const reader = new FileReader(); reader.onload = (e) => {
+            const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+            let hat = []; rows.forEach(r => { if(r[0] && r[1]) for(let i=0; i<r[1]; i++) hat.push(r[0]); });
+            if(hat.length) {
+                fetch(`${SCRIPT}?broadcast_ritual=true&hat=${encodeURIComponent(JSON.stringify(hat))}&from_owner=${USER.key}`, { 
+                    redirect: 'follow', mode: 'cors', credentials: 'omit' 
+                })
+                .then(() => alert('Ritual Broadcasted.'));
+            }
+        }; reader.readAsArrayBuffer(input.files[0]);
+    }
+</script>
+</body>
+</html>
