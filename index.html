@@ -3,238 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL ENGINE | V33.13 OMEGA</title>
+    <title>RITUAL | AURA-DECK V33.22</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
-        :root { --gold: #d4af37; --bg: #000; --panel: #0a0a0a; --fire: #ff6600; }
+        :root { --gold: #d4af37; --fire: #ff6600; --bg: #000; --panel: #0a0a0a; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
-        .screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index: 100; display: none; overflow-y: auto; padding: 15px; box-sizing: border-box; }
-        .screen.active { display: flex !important; flex-direction: column; align-items: center; }
-        .pane { background:var(--panel); border:1px solid #222; padding:15px; width: 100%; max-width: 500px; box-sizing: border-box; margin-bottom: 12px; cursor: pointer; position: relative; }
-        .seal-module { width: 100%; aspect-ratio: 1/1; border: 1px solid var(--gold); background-size: cover; background-position: center; display: flex; align-items: flex-end; background-color: #050505; }
-        .seal-banner { width: 100%; background: rgba(0,0,0,0.85); padding: 12px; text-align: center; border-top: 1px solid var(--gold); }
-        .av-circle { width: 60px; height: 60px; border: 1px solid var(--gold); border-radius: 50%; background-size: cover; background-position: center; background-color: #111; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:16px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top: 10px; }
-        .in { width:100%; background:#000; color:#fff; border:1px solid #333; padding:16px; margin:10px 0; box-sizing:border-box; text-align:center; font-family: inherit; }
-        .focus-layer { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index: 2000; background: #000; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; }
-        .focus-layer.active { display: flex; }
-        .ritual-flash { color: var(--fire); text-align: center; animation: flicker 0.2s infinite; font-weight: bold; }
+
+        /* AUTH SCREEN */
+        #auth-view { position:fixed; width:100%; height:100%; z-index:9000; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        #auth-view.hidden { display:none; }
+
+        /* HORIZONTAL SWIPE DECK */
+        .deck-wrapper { display: flex; width: 400vw; height: 100vh; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        .deck-wrapper::-webkit-scrollbar { display: none; }
+        .module-slide { width: 100vw; height: 100vh; scroll-snap-align: start; flex-shrink: 0; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; }
+
+        /* MODULE CARD STYLING */
+        .module-card { background: var(--panel); border: 3px solid #1a1a1a; border-radius: 15px; flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; box-shadow: 0 0 30px #000 inset; position: relative; }
+        h2 { text-transform: uppercase; letter-spacing: 5px; font-size: 28px; text-align: center; margin-bottom: 25px; text-shadow: 3px 3px 5px #000; }
+
+        /* TOAST NOTIFICATION */
+        #toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 15px 40px; border-radius: 50px; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 0 30px var(--gold); font-size: 18px; }
+
+        /* BUTTONS & INPUTS (Large for 50" / Mobile) */
+        .btn { width:100%; background:var(--gold); color:#000; border:none; padding:25px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top: 15px; font-size: 18px; border-radius: 10px; }
+        .in { width:100%; background:#111; color:#fff; border:2px solid #333; padding:25px; margin:10px 0; box-sizing:border-box; text-align:center; font-size: 20px; border-radius: 10px; }
+
+        /* NAV DOTS */
+        .nav-indicator { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 1000; pointer-events: none; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #222; transition: 0.3s; }
+        .dot.active { background: var(--gold); box-shadow: 0 0 15px var(--gold); }
+
+        /* RITUAL ANIMATION OVERLAY */
+        #ritual-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.98); z-index: 8000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .ritual-flash { color: var(--fire); font-size: 40px; animation: flicker 0.2s infinite; text-align: center; font-weight: bold; }
         @keyframes flicker { 0%, 100% { opacity:1; } 50% { opacity:0.3; } }
     </style>
 </head>
 <body>
 
-    <div id="auth-view" class="screen active" style="z-index: 1000; justify-content: center;">
-        <div style="width:100%; max-width:350px; text-align:center; border:1px solid #111; padding:30px; background:var(--panel);">
-            <h1 style="letter-spacing:10px;">RITUAL</h1>
-            <small id="hud">[ SYSTEM: STANDBY ]</small>
+    <div id="toast">LINK COPIED!</div>
+
+    <div id="auth-view">
+        <h1 style="font-size: 60px; color: var(--gold); text-shadow: 0 0 20px var(--gold);">RITUAL</h1>
+        <div style="width: 90%; max-width: 450px;">
             <input id="u" class="in" placeholder="IDENTITY" autocapitalize="none">
             <input id="p" class="in" type="password" placeholder="PASSKEY">
-            <button class="btn" onclick="login()">INITIALIZE</button>
+            <button class="btn" onclick="login()">INITIALIZE ARENA</button>
+            <p id="hud" style="text-align:center; font-size:14px; margin-top:20px; color:#444;">[ SYSTEM STANDBY ]</p>
         </div>
     </div>
 
-    <div id="arena-view" class="screen">
-        <div id="seal-box" class="seal-module" style="width:100%; max-width:500px; margin-bottom:12px;">
-            <div class="seal-banner"><h2 id="all-n" style="margin:0; font-size:18px;"></h2><small id="u-r" style="letter-spacing:3px; font-weight:bold;"></small></div>
-        </div>
-        <div class="pane" onclick="focusModule('VAULT')">
-            <div style="display:flex; align-items:center; gap:15px;">
-                <div id="my-av" class="av-circle"></div>
-                <div style="flex:1;"><div id="my-name" style="font-weight:bold; color:#fff; font-size:14px;"></div><div id="my-bio-pre" style="font-size:10px; color:#666; font-style:italic;"></div></div>
+    <div id="arena-view" style="display:none;">
+        <div class="deck-wrapper" id="main-deck">
+            
+            <div class="module-slide">
+                <h2>Broadcast</h2>
+                <div class="module-card">
+                    <div id="chat-content" style="flex:1; overflow-y:auto; font-size: 18px;"></div>
+                    <input id="msg-in" class="in" placeholder="TRANSMIT...">
+                    <button class="btn" onclick="sendChat()">SEND</button>
+                </div>
+            </div>
+
+            <div class="module-slide">
+                <h2>Hall of Fame</h2>
+                <div class="module-card" id="hof-card">
+                    <div id="hof-content" style="font-size: 20px;"></div>
+                </div>
+            </div>
+
+            <div class="module-slide">
+                <h2>Alliance</h2>
+                <div class="module-card" id="profile-list" style="font-size: 18px;"></div>
+            </div>
+
+            <div class="module-slide">
+                <h2>Command</h2>
+                <div class="module-card">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div id="my-av" style="width:120px; height:120px; margin:auto; border:3px solid var(--gold); border-radius:50%; background-size:cover;"></div>
+                        <h3 id="my-name" style="font-size: 24px;"></h3>
+                    </div>
+
+                    <div id="cmd-stack">
+                        <button class="btn" onclick="genInvite('MEMBER')">INVITE MEMBER</button>
+                        <button id="off-btn" class="btn" onclick="genInvite('OFFICER')" style="display:none; color:var(--fire)">INVITE OFFICER</button>
+                        
+                        <div id="founder-tools" style="display:none; margin-top:30px; border-top:2px solid var(--fire); padding-top:20px;">
+                            <button class="btn" onclick="showManualOnboard()" style="background:var(--fire)">MANUAL ONBOARD (OWNER)</button>
+                            <button class="btn" onclick="document.getElementById('f-up').click()" style="background:var(--fire)">RAFFLE (FEED PHOENIX)</button>
+                            <input type="file" id="f-up" accept=".xlsx,.csv" style="display:none" onchange="handleRaffle(this)">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="location.reload()" style="background:#111; color:#333; margin-top:50px;">DISCONNECT</button>
+                </div>
             </div>
         </div>
-        <div class="pane" onclick="focusModule('HALL-OF-FAME')"><small>🏆 RECORDS</small><div id="hof-pre" style="height:60px; overflow:hidden; font-size:10px; margin-top:5px;"></div></div>
-        <div class="pane" onclick="focusModule('ARENA-CHAT')"><small>🔥 CHAT</small><div id="chat-pre" style="height:60px; overflow:hidden; font-size:11px; margin-top:5px;"></div></div>
-        <div id="cmd" class="pane" style="display:none; border:1px solid #ff444433;">
-            <b style="color:var(--fire); font-size:10px;">COMMAND CENTER</b>
-            <div id="founder-panel" style="display:none; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:10px;">
-                <p style="font-size:9px; color:var(--gold);">FOUNDER PROTOCOL</p>
-                <button class="btn" onclick="focusModule('ONBOARD')">ONBOARD SUBSCRIBER</button>
-                <button class="btn" onclick="runSync()">SYNC HISTORY</button>
-            </div>
-            <button class="btn" onclick="document.getElementById('logo-up').click()">BRAND SEAL</button>
-            <input type="file" id="logo-up" accept="image/*" style="display:none" onchange="procLogo(this)">
-            <button class="btn" onclick="focusModule('RECON')">RECONCILE MEMBER</button>
-            <button class="btn" onclick="document.getElementById('f-up').click()" style="background:var(--fire)">COMMENCE RITUAL</button>
-            <input type="file" id="f-up" accept=".csv, .xlsx" style="display:none;" onchange="handleRaffle(this)">
-            <button onclick="location.reload()" style="background:none; color:#444; width:100%; border:none; margin-top:15px;">DISCONNECT</button>
+
+        <div class="nav-indicator">
+            <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
     </div>
 
-    <div id="focus-layer" class="focus-layer">
-        <button onclick="exitFocus()" style="color:var(--gold); background:none; border:none; margin-bottom:20px; text-align:left; font-weight:bold;">← BACK</button>
-        <div id="focus-body" style="flex:1; overflow-y:auto; border:1px solid #111; padding:10px;"></div>
-        <div id="focus-controls"></div>
+    <div id="ritual-overlay">
+        <div id="ritual-body"></div>
     </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbwg50OA1wZGaZfVFh5KiBuGytFz7vxMwWOAue2gPAN8aWejh54iNa9IE8yPrakvUp9n/exec";
-    let USER = null; let RITUAL = false;
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbyhFUwAMg1WNMPnUL9mH6xuB8l8e5Karx-oQQkDAcF3Eudmxox4-qEIhicGPnGt5hA5/exec";
+    let USER = null; let RITUAL_ACTIVE = false;
 
     function apiCall(params) {
-        const old = document.getElementById('ritual-api'); if(old) old.remove();
-        const s = document.createElement('script'); s.id = 'ritual-api';
+        const s = document.createElement('script');
         s.src = `${SCRIPT}?${params}&cb=${Date.now()}`;
         document.body.appendChild(s);
     }
 
     function handleResponse(d) {
-        if(d.status === "AUTHORIZED") { 
-            USER = d; 
-            if(USER.subStatus === "INITIATED") { showClaimScreen(); return; }
-            renderArena(); 
-        }
-        else if (d.status === "SUCCESS") { 
-            if(d.msg && d.msg.includes("Throne")) location.reload();
-            document.getElementById('hud').innerText = d.msg || "[ SUCCESS ]";
-            exitFocus(); 
-        }
-        else if (d.chat || d.history) { updateArenaData(d); }
+        if(d.status === "AUTHORIZED") { USER = d; renderArena(); }
+        else if(d.history) { updateData(d); }
+        else if(d.ritual_broadcast) { startRemoteRitual(d); }
     }
 
     function login() {
-        const u = document.getElementById('u').value.trim();
-        const p = document.getElementById('p').value.trim();
-        document.getElementById('hud').innerText = "[ INITIALIZING... ]";
-        apiCall(`user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
-    }
-
-    function showClaimScreen() {
-        document.getElementById('auth-view').classList.remove('active');
-        const layer = document.getElementById('focus-layer');
-        const body = document.getElementById('focus-body');
-        layer.classList.add('active');
-        body.innerHTML = `
-            <div style="text-align:center; padding:20px;">
-                <h2 style="color:var(--fire)">CLAIM YOUR THRONE</h2>
-                <input id="cl-a" class="in" placeholder="ALLIANCE NAME">
-                <input id="cl-u" class="in" placeholder="NEW USERNAME">
-                <input id="cl-p" class="in" type="password" placeholder="NEW PASSWORD">
-                <button class="btn" onclick="executeClaim()">ACTIVATE NODE</button>
-            </div>`;
-    }
-
-    function executeClaim() {
-        const a = document.getElementById('cl-a').value;
-        const u = document.getElementById('cl-u').value;
-        const p = document.getElementById('cl-p').value;
-        apiCall(`claim_owner=true&key=${USER.key}&alliance=${encodeURIComponent(a)}&user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
+        apiCall(`user=${encodeURIComponent(document.getElementById('u').value)}&pass=${encodeURIComponent(document.getElementById('p').value)}`);
     }
 
     function renderArena() {
-        document.getElementById('auth-view').classList.remove('active');
-        document.getElementById('arena-view').classList.add('active');
-        document.getElementById('all-n').innerText = USER.alliance;
-        document.getElementById('u-r').innerText = USER.role;
+        document.getElementById('auth-view').classList.add('hidden');
+        document.getElementById('arena-view').style.display = 'block';
         document.getElementById('my-name').innerText = USER.user.toUpperCase();
-        document.getElementById('my-bio-pre').innerText = USER.bio || "...";
-        if(USER.logo) document.getElementById('seal-box').style.backgroundImage = `url('${USER.logo}')`;
         if(USER.av) document.getElementById('my-av').style.backgroundImage = `url('${USER.av}')`;
-        if(USER.role !== "MEMBER") document.getElementById('cmd').style.display='block';
-        if(USER.isFounder) document.getElementById('founder-panel').style.display='block';
-        setInterval(() => { if(!RITUAL) apiCall(`get_sync=true&key=${USER.key}`); }, 8000);
+        if(USER.role !== "MEMBER") document.getElementById('off-btn').style.display = 'block';
+        if(USER.isFounder) document.getElementById('founder-tools').style.display = 'block';
+
+        setInterval(() => { if(!RITUAL_ACTIVE) apiCall(`get_sync=true&key=${USER.key}`); }, 8000);
+        
+        const deck = document.getElementById('main-deck');
+        deck.onscroll = () => {
+            const index = Math.round(deck.scrollLeft / window.innerWidth);
+            document.querySelectorAll('.dot').forEach((d, i) => d.className = i === index ? 'dot active' : 'dot');
+        };
     }
 
-    function focusModule(type) {
-        const layer = document.getElementById('focus-layer');
-        const body = document.getElementById('focus-body');
-        const ctrl = document.getElementById('focus-controls');
-        layer.classList.add('active'); body.innerHTML = ""; ctrl.innerHTML = "";
-        if(type === 'VAULT') {
-            body.innerHTML = `<div style="text-align:center;"><div class="av-circle" id="av-focus" style="width:120px; height:120px; margin:auto; background-image:url('${USER.av}')" onclick="document.getElementById('av-up').click()"></div><h3 id="focus-title">${USER.user.toUpperCase()}</h3><textarea id="b-in" class="in" style="height:150px; text-align:left;">${USER.bio}</textarea></div>`;
-            ctrl.innerHTML = `<button class="btn" onclick="saveVault()">RATIFY IDENTITY</button><input type="file" id="av-up" style="display:none" onchange="procAv(this)">`;
-        } else if(type === 'ARENA-CHAT') {
-            body.innerHTML = `<div id="chat-full">${document.getElementById('chat-pre').innerHTML}</div>`;
-            ctrl.innerHTML = `<input id="msg-f" class="in" placeholder="Transmit..."><button class="btn" onclick="sendChatF()">EXECUTE</button>`;
-        } else if(type === 'ONBOARD') {
-            body.innerHTML = `<h3>NEW SUBSCRIBER</h3><input id="sub-e" class="in" placeholder="EMAIL"><input id="sub-a" class="in" placeholder="ALLIANCE NAME">`;
-            ctrl.innerHTML = `<button class="btn" onclick="runOnboard()">ISSUE OWNER KEY</button>`;
-        } else if(type === 'RECON') {
-            body.innerHTML = `<h3>RECONCILE</h3><input id="rec-e" class="in" placeholder="EMAIL"><select id="rec-r" class="in"><option value="MEMBER">MEMBER</option><option value="OFFICER">OFFICER</option></select>`;
-            ctrl.innerHTML = `<button class="btn" onclick="runRecon()">AMEND NODE</button>`;
-        }
+    function showToast(m) {
+        const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
     }
 
-    function exitFocus() { document.getElementById('focus-layer').classList.remove('active'); }
-
-    async function saveVault() {
-        const b = document.getElementById('b-in').value;
-        const t = document.getElementById('focus-title'); t.innerText = "UPDATING...";
-        await fetch(SCRIPT, { method: 'POST', body: JSON.stringify({ type: "ID", key: USER.key, bio: encodeURIComponent(b), av: USER.av }) });
-        USER.bio = b; document.getElementById('my-bio-pre').innerText = b; exitFocus();
+    function genInvite(role) {
+        const link = `${window.location.href.split('?')[0]}?invite=true&role=${role}&alliance=${encodeURIComponent(USER.alliance)}`;
+        navigator.clipboard.writeText(link).then(() => showToast(`${role} LINK COPIED!`));
     }
 
-    async function procLogo(input) {
-        if (!input.files[0]) return;
-        const reader = new FileReader(); reader.onload = (e) => {
-            const img = new Image(); img.onload = async () => {
-                const cvs = document.createElement('canvas'); cvs.width=400; cvs.height=400;
-                cvs.getContext('2d').drawImage(img, 0, 0, 400, 400);
-                const lData = cvs.toDataURL("image/jpeg", 0.6);
-                await fetch(SCRIPT, { method: 'POST', body: JSON.stringify({ type: "LOGO", key: USER.key, logo: lData }) });
-                location.reload();
-            }; img.src = e.target.result;
-        }; reader.readAsDataURL(input.files[0]);
-    }
-
-    function procAv(input) {
-        const reader = new FileReader(); reader.onload = (e) => {
-            const img = new Image(); img.onload = () => {
-                const cvs = document.createElement('canvas'); cvs.width=128; cvs.height=128;
-                cvs.getContext('2d').drawImage(img, 0, 0, 128, 128);
-                USER.av = cvs.toDataURL("image/jpeg", 0.5);
-                if(document.getElementById('av-focus')) document.getElementById('av-focus').style.backgroundImage = `url('${USER.av}')`;
-            }; img.src = e.target.result;
-        }; reader.readAsDataURL(input.files[0]);
-    }
-
-    function runSync() { if(confirm("Sync all historical data?")) apiCall(`sync_history=true&from_owner=${USER.key}`); }
-    function runOnboard() { 
-        const e = document.getElementById('sub-e').value; const a = document.getElementById('sub-a').value;
-        apiCall(`initiate_email=${encodeURIComponent(e)}&alliance_name=${encodeURIComponent(a)}&from_owner=${USER.key}`);
-    }
-    function runRecon() {
-        const e = document.getElementById('rec-e').value; const r = document.getElementById('rec-r').value;
-        apiCall(`member_recon=true&email=${encodeURIComponent(e)}&role=${r}&from_owner=${USER.key}`);
-    }
-    function updateArenaData(d) {
-        const chatHtml = (d.chat || []).map(m => `<div style="margin-bottom:8px; border-left:1px solid var(--gold); padding-left:8px;"><b>${m.user}:</b><br>${m.text}</div>`).join('');
-        const hofHtml = (d.history || []).map(h => `<div style="border-bottom:1px solid #111; padding:8px;">[${h.date}] ${h.name}</div>`).join('');
-        if(document.getElementById('chat-pre')) document.getElementById('chat-pre').innerHTML = chatHtml;
-        if(document.getElementById('hof-pre')) document.getElementById('hof-pre').innerHTML = hofHtml;
-        if(document.getElementById('chat-full')) document.getElementById('chat-full').innerHTML = chatHtml;
-    }
-    function sendChatF() {
-        const m = document.getElementById('msg-f').value; if(!m) return;
-        apiCall(`key=${USER.key}&user_name=${encodeURIComponent(USER.user)}&chat_msg=${encodeURIComponent(m)}`);
-        document.getElementById('msg-f').value = '';
-    }
     function handleRaffle(input) {
         const reader = new FileReader(); reader.onload = (e) => {
-            const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+            const rows = XLSX.utils.sheet_to_json(XLSX.read(new Uint8Array(e.target.result), {type:'array'}).Sheets.Sheet1, {header:1});
             let hat = []; rows.forEach(r => { if(r[0] && r[1]) for(let i=0; i<r[1]; i++) hat.push(r[0]); });
-            if(hat.length) startRitual(hat);
+            if(hat.length) {
+                apiCall(`key=${USER.key}&broadcast_ritual=true&hat=${encodeURIComponent(JSON.stringify(hat))}`);
+                localRitual(hat);
+            }
         }; reader.readAsArrayBuffer(input.files[0]);
     }
-    function startRitual(hat) {
-        RITUAL = true; const h = document.getElementById('hof-pre');
-        h.innerHTML = "<div class='ritual-flash'><br>THE PHOENIX HAS BEEN FED...</div>";
-        setTimeout(() => {
-            let t = 10;
-            const i = setInterval(() => {
-                const n = hat[Math.floor(Math.random()*hat.length)];
-                h.innerHTML = `<div style='text-align:center;'><br><span style='color:#444'>${n}</span><br><span style='font-size:40px'>${t}</span></div>`;
-                if(t-- <= 0) {
-                    clearInterval(i); const w = hat[Math.floor(Math.random()*hat.length)];
-                    h.innerHTML = `<div class='ritual-flash' style='color:var(--gold)'><br>RITUAL COMPLETE<br><br><span style='font-size:22px'>${w}</span></div>`;
-                    apiCall(`key=${USER.key}&log_winner=${encodeURIComponent(w)}`);
-                    setTimeout(() => { RITUAL = false; }, 5000);
-                }
-            }, 1000);
-        }, 2000);
+
+    function localRitual(hat) {
+        RITUAL_ACTIVE = true;
+        const overlay = document.getElementById('ritual-overlay');
+        overlay.style.display = 'flex';
+        let t = 10;
+        const i = setInterval(() => {
+            const n = hat[Math.floor(Math.random()*hat.length)];
+            document.getElementById('ritual-body').innerHTML = `<div style="text-align:center;"><h1 style="color:#222; font-size:50px;">${n}</h1><div style="font-size:150px; color:var(--gold);">${t}</div></div>`;
+            if(t-- <= 0) {
+                clearInterval(i);
+                const w = hat[Math.floor(Math.random()*hat.length)];
+                document.getElementById('ritual-body').innerHTML = `<div class="ritual-flash">RITUAL COMPLETE</div><h1 style="font-size:60px;">${w}</h1>`;
+                apiCall(`key=${USER.key}&log_winner=${encodeURIComponent(w)}`);
+                setTimeout(() => { overlay.style.display='none'; RITUAL_ACTIVE=false; }, 6000);
+            }
+        }, 1000);
     }
+
+    function updateData(d) {
+        document.getElementById('hof-content').innerHTML = (d.history || []).map(h => `<div style="padding:15px; border-bottom:1px solid #222;">[${h.date}] <b>${h.name}</b></div>`).join('');
+    }
+
+    window.onload = () => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('invite')) {
+            document.getElementById('auth-view').innerHTML = `
+                <h1 style="color:var(--gold)">JOIN ${params.get('alliance').toUpperCase()}</h1>
+                <p style="color:#aaa;">As an ${params.get('role')}</p>
+                <input id="reg-e" class="in" style="width:90%; max-width:400px;" placeholder="EMAIL">
+                <button class="btn" style="width:90%; max-width:400px;" onclick="apiCall('register_invitee=true&email='+document.getElementById('reg-e').value+'&role=${params.get('role')}&alliance=${params.get('alliance')}')">GET KEY</button>`;
+        }
+    };
 </script>
 </body>
 </html>
