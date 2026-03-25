@@ -3,32 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | V33.79 PRODUCTION</title>
+    <title>RITUAL | V33.81 COMPLETE</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
-        :root { --gold: #d4af37; --fire: #ff6600; --bg: #000; --panel: #0a0a0a; }
+        :root { --gold: #d4af37; --fire: #ff6600; --bg: #000; --panel: #0a0a0a; --led-green: #00ff41; --led-red: #ff0000; }
         body, html { margin:0; padding:0; background:#000; color:var(--gold); font-family:'Courier New', monospace; height:100vh; overflow:hidden; }
 
-        /* DECK SYSTEM */
         .deck-wrapper { display: flex; width: 400vw; height: 100vh; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .deck-wrapper.snapping { scroll-snap-type: x mandatory; }
         .deck-wrapper::-webkit-scrollbar { display: none; }
-
         .module-slide { width: 100vw; height: 100vh; scroll-snap-align: start; flex-shrink: 0; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; }
-        .module-card { background: var(--panel); border: 2px solid #1a1a1a; border-radius: 15px; flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; box-shadow: 0 0 40px #000 inset; }
+        .module-card { background: var(--panel); border: 2px solid #1a1a1a; border-radius: 15px; flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; box-shadow: 0 0 40px #000 inset; position: relative; }
 
         h2 { text-transform: uppercase; letter-spacing: 5px; font-size: 28px; text-align: center; margin-bottom: 25px; color: var(--gold); }
         .btn { width:100%; background:var(--gold); color:#000; border:none; padding:25px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top: 15px; font-size: 18px; border-radius: 10px; }
         .in { width:100%; background:#111; color:#fff; border:2px solid #333; padding:25px; margin:10px 0; box-sizing:border-box; text-align:center; font-size: 20px; border-radius: 10px; }
+
+        .led-indicator { position: fixed; bottom: 30px; left: 30px; display: flex; gap: 12px; z-index: 5000; pointer-events: none; }
+        .led { width: 16px; height: 16px; border-radius: 50%; background: var(--led-green); box-shadow: 0 0 10px var(--led-green); transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); }
+        .led.active { background: var(--led-red) !important; box-shadow: 0 0 20px var(--led-red) !important; }
         
-        #arena-view { display: none; opacity: 0; transition: opacity 0.6s ease-in; }
+        #arena-view { display: none; opacity: 0; transition: opacity 0.5s; }
         .row-item { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; color: #fff; }
     </style>
 </head>
 <body>
 
     <div id="auth-view" style="position:fixed; width:100%; height:100%; z-index:9000; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-        <h1 style="font-size: 60px; color: var(--gold); letter-spacing: 15px;">RITUAL</h1>
+        <h1 style="font-size: 60px; color: var(--gold); letter-spacing: 15px; margin-bottom: 40px;">RITUAL</h1>
         <div id="auth-form" style="width: 90%; max-width: 450px;">
             <input id="u" class="in" placeholder="IDENTITY" autocapitalize="none">
             <input id="p" class="in" type="password" placeholder="PASSKEY">
@@ -39,34 +41,42 @@
 
     <div id="arena-view">
         <div class="deck-wrapper" id="main-deck">
-            <div class="module-slide"><h2>Arena Chat</h2><div class="module-card" id="chat-content">ESTABLISHING...</div></div>
-            <div class="module-slide"><h2>Hall of Fame</h2><div class="module-card" id="hof-content">SYNCING...</div></div>
-            <div class="module-slide"><h2>Alliance</h2><div class="module-card" id="profile-list">SYNCING...</div></div>
+            <div class="module-slide"><h2>Arena Chat</h2><div class="module-card" id="chat-content">ESTABLISHING LINK...</div></div>
+            <div class="module-slide"><h2>Hall of Fame</h2><div class="module-card" id="hof-content">SYNCING RECORDS...</div></div>
+            <div class="module-slide"><h2>Alliance</h2><div class="module-card" id="profile-list">SYNCING NODES...</div></div>
             <div class="module-slide" id="slide-cmd">
                 <h2>Command</h2>
                 <div class="module-card" style="text-align:center;">
                     <div id="my-name" style="font-size: 28px; margin-bottom: 20px;">COMMANDER</div>
+                    <button class="btn" onclick="genInvite('MEMBER')">SHARE MEMBER LINK</button>
+                    <button id="off-btn" class="btn" onclick="genInvite('OFFICER')" style="display:none; color:var(--fire)">SHARE OFFICER LINK</button>
+                    <div id="founder-tools" style="display:none; border-top:2px solid var(--fire); margin-top:30px; padding-top:20px;">
+                        <button class="btn" onclick="document.getElementById('f-up').click()" style="background:var(--fire)">FEED PHOENIX</button>
+                        <input type="file" id="f-up" accept=".xlsx,.csv" style="display:none" onchange="handleRaffle(this)">
+                    </div>
                     <button class="btn" onclick="location.reload()" style="background:#111; color:#333; margin-top:50px;">DISCONNECT</button>
                 </div>
             </div>
         </div>
+        <div class="led-indicator"><div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div></div>
     </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbxvZn8bGKhe1DCu9X78OtDLxN17A4EBo8rp6wlv2tyqIK0e8FI0ZCEWjHZ-gwpcYPvN/exec";
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbyjPALbV7z17-mdJPm_7ytp2X8Y1BZSH7TB5A4CZiNxPAGqPlOHpDe3qXk5CKehfzmQ/exec";
     let USER = null;
 
     async function login() {
-        const u = document.getElementById('u').value.trim();
-        const p = document.getElementById('p').value.trim();
-        if(!u || !p) return;
+        const uInput = document.getElementById('u').value.trim();
+        const pInput = document.getElementById('p').value.trim();
+        if(!uInput || !pInput) return;
         document.getElementById('hud').innerText = "[ INITIALIZING... ]";
         
         try {
-            const resp = await fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`, { 
+            const resp = await fetch(`${SCRIPT}?user=${encodeURIComponent(uInput)}&pass=${encodeURIComponent(pInput)}`, { 
                 redirect: 'follow', mode: 'cors', credentials: 'omit' 
             });
-            const d = await resp.json();
+            const data = await resp.json();
+            const d = typeof data === 'string' ? JSON.parse(data) : data;
 
             if(d.status === "AUTHORIZED") {
                 USER = d;
@@ -74,45 +84,76 @@
                 const deck = document.getElementById('main-deck');
 
                 arena.style.display = 'block';
-                // Force paint
-                arena.offsetHeight;
+                arena.offsetHeight; 
                 document.getElementById('auth-view').style.display = 'none';
                 arena.style.opacity = '1';
                 
-                // BUFFERED TRANSITION: Let the opacity finish before jumping
                 setTimeout(() => {
                     const jump = (USER.role === "MEMBER") ? 0 : (window.innerWidth * 3);
                     deck.scrollTo({left: jump, behavior: 'auto'});
                     
                     setTimeout(() => {
                         deck.classList.add('snapping');
+                        updateLEDs();
                         triggerSync();
-                    }, 150);
+                    }, 100);
 
                     document.getElementById('my-name').innerText = USER.user.toUpperCase();
-                }, 600);
+                    if(USER.role !== "MEMBER") document.getElementById('off-btn').style.display = 'block';
+                    if(USER.isFounder) document.getElementById('founder-tools').style.display = 'block';
+                }, 150);
 
                 setInterval(triggerSync, 8000);
-            } else { document.getElementById('hud').innerText = "[ REJECTED ]"; }
-        } catch(e) { document.getElementById('hud').innerText = "[ CONNECTION ERROR ]"; }
+                deck.onscroll = updateLEDs;
+            } else {
+                document.getElementById('hud').innerText = "[ REJECTED ]";
+            }
+        } catch(e) { document.getElementById('hud').innerText = "[ HANDSHAKE ERROR ]"; }
     }
 
     async function triggerSync() {
         if(!USER) return;
         try {
             const resp = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`, { 
-                redirect: 'follow', mode: 'cors', credentials: 'omit' 
+                redirect: 'follow', mode: 'cors', credentials: 'omit'
             });
-            const d = await resp.json();
+            const data = await resp.json();
+            const d = typeof data === 'string' ? JSON.parse(data) : data;
             if(d.status === "SYNC_OK") updateData(d);
         } catch(e) {}
     }
 
+    function updateLEDs() {
+        const deck = document.getElementById('main-deck');
+        const index = Math.round(deck.scrollLeft / window.innerWidth);
+        const leds = document.querySelectorAll('.led');
+        leds.forEach((l, i) => l.className = i === index ? 'led active' : 'led');
+    }
+
     function updateData(d) {
         if(d.history) {
-            document.getElementById('chat-content').innerHTML = d.history.map(h => `<div class="row-item"><b>${h.name}</b>: Signal Established.</div>`).join('');
-            document.getElementById('hof-content').innerHTML = d.history.map(h => `<div class="row-item"><b>${h.name}</b> Logged.</div>`).join('');
+            document.getElementById('chat-content').innerHTML = d.history.map(h => `<div class="row-item"><b>${h.name}</b> [${h.date}] <br> Signal Established.</div>`).join('');
+            document.getElementById('hof-content').innerHTML = d.history.map(h => `<div class="row-item"><b>${h.name}</b> Record Logged.</div>`).join('');
         }
+    }
+
+    function genInvite(role) {
+        const link = `${window.location.href.split('?')[0]}?invite=true&role=${role}&alliance=${encodeURIComponent(USER.alliance)}`;
+        navigator.clipboard.writeText(link).then(() => { alert('Link Copied!'); });
+    }
+
+    function handleRaffle(input) {
+        const reader = new FileReader(); reader.onload = (e) => {
+            const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+            let hat = []; rows.forEach(r => { if(r[0] && r[1]) for(let i=0; i<r[1]; i++) hat.push(r[0]); });
+            if(hat.length) {
+                fetch(`${SCRIPT}?broadcast_ritual=true&hat=${encodeURIComponent(JSON.stringify(hat))}&from_owner=${USER.key}`, { 
+                    redirect: 'follow', mode: 'cors', credentials: 'omit' 
+                })
+                .then(() => alert('Ritual Broadcasted.'));
+            }
+        }; reader.readAsArrayBuffer(input.files[0]);
     }
 </script>
 </body>
