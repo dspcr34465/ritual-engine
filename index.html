@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RITUAL | V33.54 COMMAND</title>
+    <title>RITUAL | V33.57 COMMAND</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --gold: #d4af37; --fire: #ff6600; --bg: #000; --panel: #0a0a0a; --led-green: #00ff41; --led-red: #ff0000; }
@@ -19,7 +19,7 @@
         .in { width:100%; background:#111; color:#fff; border:2px solid #333; padding:25px; margin:10px 0; box-sizing:border-box; text-align:center; font-size: 20px; border-radius: 10px; }
 
         .led-indicator { position: fixed; bottom: 30px; left: 30px; display: flex; gap: 12px; z-index: 5000; pointer-events: none; }
-        .led { width: 16px; height: 16px; border-radius: 50%; background: var(--led-green); box-shadow: 0 0 10px var(--led-green); border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        .led { width: 16px; height: 16px; border-radius: 50%; background: var(--led-green); box-shadow: 0 0 10px var(--led-green); transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); }
         .led.active { background: var(--led-red) !important; box-shadow: 0 0 20px var(--led-red) !important; }
 
         #ritual-overlay { position: fixed; width: 100vw; height: 100vh; background:#000; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; border: 4px solid var(--fire); }
@@ -43,9 +43,9 @@
 
     <div id="arena-view" style="display:none;">
         <div class="deck-wrapper" id="main-deck">
-            <div class="module-slide"><h2>Arena Chat</h2><div class="module-card" id="chat-content">WAITING...</div></div>
-            <div class="module-slide" id="slide-hof"><h2>Hall of Fame</h2><div class="module-card" id="hof-content">SYNCING...</div></div>
-            <div class="module-slide"><h2>Alliance</h2><div class="module-card" id="profile-list">SYNCING...</div></div>
+            <div class="module-slide"><h2>Arena Chat</h2><div class="module-card" id="chat-content">ESTABLISHING LINK...</div></div>
+            <div class="module-slide"><h2>Hall of Fame</h2><div class="module-card" id="hof-content">SYNCING RECORDS...</div></div>
+            <div class="module-slide"><h2>Alliance</h2><div class="module-card" id="profile-list">SYNCING NODES...</div></div>
             <div class="module-slide" id="slide-cmd">
                 <h2>Command</h2>
                 <div class="module-card" style="text-align:center;">
@@ -58,46 +58,44 @@
     </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbybDK5WWGw1R5SpRvH41ll-M6F4k5APHXsz7PE3VC-viEKuFX2E2ZR13FtM1zyoYaMf/exec";
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbz7uCQhdlFdcqdpW61N5btZ-fQrurxBBS6E3wAb7SDus0bGWQQ_alGPVDcuPGji5Dh2/exec";
     let USER = null;
 
-    // GLOBAL SIM-FIX: Hook for JSONP
-    window.handleResponse = function(d) {
-        if(d.status === "AUTHORIZED") {
-            USER = d;
-            document.getElementById('auth-view').style.display = 'none';
-            document.getElementById('arena-view').style.display = 'block';
-            
-            // SIM-FIX: Mobile render buffer
-            setTimeout(() => {
-                const deck = document.getElementById('main-deck');
-                if(USER.role === "MEMBER") deck.scrollLeft = 0;
-                else deck.scrollLeft = window.innerWidth * 3;
-                document.getElementById('my-name').innerText = USER.user.toUpperCase();
-                updateLEDs();
-            }, 500);
-
-            if(USER.subStatus === "INITIATED") { showClaimScreen(); }
-            setInterval(() => { ritualRequest(`get_sync=true&key=${USER.key}`); }, 8000);
-            document.getElementById('main-deck').onscroll = updateLEDs;
-        } 
-        else if(d.status === "ERROR") { document.getElementById('hud').innerText = "[ REJECTED ]"; }
-        else if(d.status === "SYNC_OK") { updateData(d); }
-    };
-
-    function ritualRequest(params) {
-        const s = document.createElement('script');
-        s.src = `${SCRIPT}?${params}&ts=${Date.now()}`;
-        document.body.appendChild(s);
-        setTimeout(() => { if(s.parentNode) s.parentNode.removeChild(s); }, 2000); 
-    }
-
-    function login() {
+    async function login() {
         const u = document.getElementById('u').value;
         const p = document.getElementById('p').value;
         if(!u || !p) return;
         document.getElementById('hud').innerText = "[ INITIALIZING... ]";
-        ritualRequest(`user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
+        
+        try {
+            const resp = await fetch(`${SCRIPT}?user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`, { redirect: 'follow' });
+            const d = await resp.json();
+
+            if(d.status === "AUTHORIZED") {
+                USER = d;
+                document.getElementById('auth-view').style.display = 'none';
+                document.getElementById('arena-view').style.display = 'block';
+                
+                setTimeout(() => {
+                    const deck = document.getElementById('main-deck');
+                    deck.scrollLeft = (USER.role === "MEMBER") ? 0 : (window.innerWidth * 3);
+                    document.getElementById('my-name').innerText = USER.user.toUpperCase();
+                    updateLEDs();
+                }, 600);
+
+                setInterval(async () => {
+                    try {
+                        const syncResp = await fetch(`${SCRIPT}?get_sync=true&key=${USER.key}`, { redirect: 'follow' });
+                        const sync = await syncResp.json();
+                        if(sync.status === "SYNC_OK") updateData(sync);
+                    } catch(e) {}
+                }, 8000);
+                
+                document.getElementById('main-deck').onscroll = updateLEDs;
+            } else {
+                document.getElementById('hud').innerText = "[ REJECTED ]";
+            }
+        } catch(e) { document.getElementById('hud').innerText = "[ CONNECTION ERROR ]"; }
     }
 
     function updateLEDs() {
@@ -106,26 +104,8 @@
         document.querySelectorAll('.led').forEach((l, i) => l.className = i === index ? 'led active' : 'led');
     }
 
-    function showClaimScreen() {
-        document.getElementById('slide-cmd').querySelector('.module-card').innerHTML = `
-            <h2 style="color:var(--gold); font-size:24px;">ACTIVATE NODE</h2>
-            <input id="cl-a" class="in" placeholder="ALLIANCE NAME">
-            <input id="cl-u" class="in" placeholder="NEW USERNAME">
-            <input id="cl-p" class="in" type="password" placeholder="NEW PASSWORD">
-            <button class="btn" onclick="submitClaim()">ACTIVATE</button>`;
-        document.getElementById('main-deck').scrollLeft = window.innerWidth * 3;
-        updateLEDs();
-    }
-
-    function submitClaim() {
-        const a = document.getElementById('cl-a').value;
-        const u = document.getElementById('cl-u').value;
-        const p = document.getElementById('cl-p').value;
-        ritualRequest(`claim_owner=true&key=${USER.key}&alliance=${encodeURIComponent(a)}&user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`);
-    }
-
     function updateData(d) {
-        if(d.history) document.getElementById('hof-content').innerHTML = d.history.map(h => `<div style="padding:15px; border-bottom:1px solid #222;">[${h.date}] <b>${h.name}</b></div>`).join('');
+        if(d.history) document.getElementById('hof-content').innerHTML = d.history.map(h => `<div style="padding:10px; border-bottom:1px solid #222;">[${h.date}] <b>${h.name}</b></div>`).join('');
     }
 </script>
 </body>
